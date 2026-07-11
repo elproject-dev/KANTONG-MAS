@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jtvldoohgcgjsddagrdj.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dmxkb29oZ2NnanNkZGFncmRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTc4ODksImV4cCI6MjA5NzQ5Mzg4OX0.Q7XbdnMDfucDkQiac125zop9thqesdTD-LLOAotWOgs';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fprtzdlaeobkuzqhdqaf.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcnR6ZGxhZW9ia3V6cWhkcWFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NjQzMzksImV4cCI6MjA5OTM0MDMzOX0.dniOa1dBajexguQvjy-xkO5qQha1GNVKmVkel2kmxxg';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
