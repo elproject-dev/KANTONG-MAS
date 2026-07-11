@@ -870,7 +870,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center p-2 animate-logo-ring">
                     <img
-                      src={`${import.meta.env.BASE_URL}CV.AULIA.png`}
+                      src={`${import.meta.env.BASE_URL}kantongmas.png`}
                       alt="Logo"
                       className="w-12 h-12 object-contain"
                     />

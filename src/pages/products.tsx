@@ -315,7 +315,7 @@ export default function ProductsPage() {
       }
       groups[name].tiers.push({
         discount_type: u.discount_type || 'none',
-        discount_value: u.discount_value ? Number(u.discount_value).toString() : '',
+        discount_value: u.discount_value ? formatNumberWithDots(Math.round(Number(u.discount_value)).toString()) : '',
         min_qty: u.min_qty || 1,
         label: u.label || ''
       });
@@ -371,8 +371,8 @@ export default function ProductsPage() {
           conversion_factor: Number(group.conversion_factor) || 1,
           price: group.price ? parseNumberFromDots(group.price) : null,
           is_default: group.is_default,
-          discount_type: (tier.discount_value && Number(tier.discount_value) > 0) ? 'percent' : 'none',
-          discount_value: tier.discount_value ? Number(tier.discount_value) : 0,
+          discount_type: (tier.discount_value && parseNumberFromDots(String(tier.discount_value)) > 0) ? 'nominal' : 'none',
+          discount_value: tier.discount_value ? parseNumberFromDots(String(tier.discount_value)) : 0,
           min_qty: Number(tier.min_qty) || 1,
           label: tier.discount_type === 'none' ? null : (tier.label || null),
           outlet_prices: outletPricesNumeric
@@ -676,7 +676,7 @@ export default function ProductsPage() {
             "Harga Satuan Qty": basePrice,
             "Min.beli(Qty)": uom.min_qty || 1,
             "/": uom.unit_name,
-            "Diskon %": uom.discount_type === 'percentage' ? discVal : (discVal > 0 ? discVal : 0),
+            "Diskon (Rp)": discVal,
           };
 
           // Tambahkan harga per area
@@ -2496,9 +2496,9 @@ export default function ProductsPage() {
                       {row.tiers && row.tiers.map((tier: any, tierIdx: number) => {
                         const unitPrice = parseNumberFromDots(row.price || "0");
                         const minQty = tier.min_qty || 1;
-                        const discVal = Number(tier.discount_value || 0);
+                        const discVal = tier.discount_value ? parseNumberFromDots(String(tier.discount_value)) : 0;
                         const totalBeforeDisc = unitPrice * minQty;
-                        const discountAmount = totalBeforeDisc * (discVal / 100);
+                        const discountAmount = discVal;
                         const totalAfterDisc = Math.max(0, totalBeforeDisc - discountAmount);
 
                         return (
@@ -2528,18 +2528,19 @@ export default function ProductsPage() {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex-1 sm:w-24 space-y-1">
-                                <label className="text-[10px] font-medium text-slate-500 text-center block">Nilai Diskon (%)</label>
+                              <div className="flex-1 sm:w-28 space-y-1">
+                                <label className="text-[10px] font-medium text-slate-500 text-center block" title="Potongan harga untuk keseluruhan qty ini">Total Potongan (Rp)</label>
                                 <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
+                                  type="text"
+                                  inputMode="numeric"
                                   placeholder="0"
                                   value={tier.discount_value}
                                   onChange={(e) => {
+                                    const rawVal = e.target.value;
+                                    const formattedVal = formatNumberWithDots(rawVal);
                                     const newRows = [...uomRows];
                                     const updatedTiers = [...newRows[idx].tiers];
-                                    updatedTiers[tierIdx] = { ...updatedTiers[tierIdx], discount_value: e.target.value };
+                                    updatedTiers[tierIdx] = { ...updatedTiers[tierIdx], discount_value: formattedVal };
                                     newRows[idx] = { ...newRows[idx], tiers: updatedTiers };
                                     setUomRows(newRows);
                                     setHasChanges(true);
@@ -2627,7 +2628,7 @@ export default function ProductsPage() {
 
                                   const outletPrice = getOutletUomPrice(outlet.id.toString());
                                   const outletTotalBefore = outletPrice * minQty;
-                                  const outletDiscountAmount = outletTotalBefore * (discVal / 100);
+                                  const outletDiscountAmount = discVal;
                                   const outletTotalAfter = Math.max(0, outletTotalBefore - outletDiscountAmount);
 
                                   return (
@@ -2663,7 +2664,7 @@ export default function ProductsPage() {
                           className="text-xs h-7"
                           onClick={() => {
                             const newRows = [...uomRows];
-                            const updatedTiers = [...newRows[idx].tiers, { discount_type: 'percent', discount_value: '', min_qty: 1, label: '' }];
+                            const updatedTiers = [...newRows[idx].tiers, { discount_type: 'nominal', discount_value: '', min_qty: 1, label: '' }];
                             newRows[idx] = { ...newRows[idx], tiers: updatedTiers };
                             setUomRows(newRows);
                             setHasChanges(true);

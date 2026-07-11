@@ -460,8 +460,7 @@ export default function POSPage() {
     const unitPrice = selectedUnit ? getUomPrice(selectedUnit, product) : getProductBasePrice(product) * conversionFactor;
 
     let uomDiscountAmount = 0;
-    if (selectedUnit?.discount_type === 'amount') {
-      // Threshold pricing: nilai diskon dibagi rata per unit
+    if (selectedUnit?.discount_type === 'amount' || selectedUnit?.discount_type === 'nominal') {
       uomDiscountAmount = (Number(selectedUnit.discount_value) || 0) / (selectedUnit.min_qty || 1);
     } else if (selectedUnit?.discount_type === 'percent') {
       uomDiscountAmount = unitPrice * ((Number(selectedUnit.discount_value) || 0) / 100);
@@ -743,9 +742,8 @@ export default function POSPage() {
     const basePrice = getUomPrice(activeUom, product);
     let discountAmountPerUnit = 0;
     if (item.quantity >= (activeUom.min_qty || 1)) {
-      if (activeUom.discount_type === 'amount') {
-        // Konsep Threshold: Diskon dibagi rata per unit, jadi saat qty naik, harga per unit tetap konsisten
-        discountAmountPerUnit = (Number(activeUom.discount_value) || 0) / (activeUom.min_qty || 1);
+      if (activeUom.discount_type === 'amount' || activeUom.discount_type === 'nominal') {
+        discountAmountPerUnit = (Number(activeUom.discount_value) || 0) / item.quantity;
       } else if (activeUom.discount_type === 'percent') {
         discountAmountPerUnit = basePrice * ((Number(activeUom.discount_value) || 0) / 100);
       }

@@ -26,12 +26,12 @@ const DEFAULT_TEMPLATES: PromoTemplate[] = [
   {
     id: -1,
     name: "Template Promo Spesial",
-    content: "Halo @ ðŸ˜Š\n\nKabar gembira dari #! ðŸŽ‰\nKami sedang mengadakan PROMO SPESIAL minggu ini!\n\nYuk, segera order produk kami atau balas pesan ini untuk info penawaran terbaik khusus untuk Anda!\n\nTerima kasih sudah menjadi pelanggan setia kami. ðŸ™\n\nSalam hangat,\n#",
+    content: "Halo @ 😊\n\nKabar gembira dari #! 🎉\nKami sedang mengadakan PROMO SPESIAL minggu ini!\n\nYuk, segera order produk kami atau balas pesan ini untuk info penawaran terbaik khusus untuk Anda!\n\nTerima kasih sudah menjadi pelanggan setia kami. 🙏\n\nSalam hangat,\n#",
   },
   {
     id: -2,
     name: "Template Penagihan",
-    content: "ðŸ”” *PEMBERITAHUAN PENAGIHAN* ðŸ””\n\nHalo @ ðŸ˜Š\n\nKami menginformasikan bahwa terdapat tagihan yang belum diselesaikan dengan detail berikut:\n\n- No. Transaksi: %\n- Tanggal Pemesanan: &\n- Total Tagihan: ^\n- Jatuh Tempo: $\n\nBerikut data pesanan saat ini adalah,\n~\n\nMohon untuk segera melakukan pembayaran atau menghubungi kami untuk konfirmasi.\n\nJika Anda sudah melakukan pembayaran, silakan abaikan pesan ini atau kirimkan bukti pembayaran kepada kami.\n\nTerima kasih atas perhatian dan kerja samanya.\n\nðŸ™ Hormat Kami,\n#",
+    content: "🔔 *PEMBERITAHUAN PENAGIHAN* 🔔\n\nHalo @ 😊\n\nKami menginformasikan bahwa terdapat tagihan yang belum diselesaikan dengan detail berikut:\n\n- No. Transaksi: %\n- Tanggal Pemesanan: &\n- Total Tagihan: ^\n- Jatuh Tempo: $\n\nBerikut data pesanan saat ini adalah,\n~\n\nMohon untuk segera melakukan pembayaran atau menghubungi kami untuk konfirmasi.\n\nJika Anda sudah melakukan pembayaran, silakan abaikan pesan ini atau kirimkan bukti pembayaran kepada kami.\n\nTerima kasih atas perhatian dan kerja samanya.\n\n🙏 Hormat Kami,\n#",
   },
 ];
 

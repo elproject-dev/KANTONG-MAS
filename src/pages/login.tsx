@@ -116,7 +116,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-[420px] relative z-10">
         <div className="text-center mb-10">
-          <img src={`${import.meta.env.BASE_URL}CV.AULIA.png`} alt="Logo" className="h-28 w-auto mx-auto object-contain mb-5 drop-shadow-2xl" />
+          <img src={`${import.meta.env.BASE_URL}kantongmas.png`} alt="Logo" className="h-28 w-auto mx-auto object-contain mb-5 drop-shadow-2xl" />
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-widest drop-shadow-lg">KANTONG-MAS</h1>
         </div>
 
