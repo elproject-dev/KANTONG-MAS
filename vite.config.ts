@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: process.env.GITHUB_PAGES === "true" ? "/CV.AULIA-USAHA/" : "/",
+  base: process.env.GITHUB_PAGES === "true" ? "/KANTONG-MAS/" : "/",
   plugins: [react()],
   resolve: {
     alias: {
