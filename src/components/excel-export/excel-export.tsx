@@ -23,6 +23,9 @@ interface TransactionItem {
   productName: string;
   price: number;
   quantity: number;
+  unitName?: string;
+  originalPrice?: number;
+  discountAmount?: number;
   qtyReturn?: number;
   returnAmount?: number;
   netTotal?: number;
@@ -90,6 +93,7 @@ const DEFAULT_COL_WIDTHS: ExportColumn[] = [
   { header: "Qty", key: "Qty", width: 8 },
   { header: "Harga", key: "Harga", width: 15 },
   { header: "Total", key: "Total", width: 15 },
+  { header: "Diskon", key: "Diskon", width: 15 },
   { header: "Qty Retur", key: "Qty Retur", width: 10 },
   { header: "Nominal Retur", key: "Nominal Retur", width: 15 },
   { header: "Sisa Piutang", key: "Sisa Piutang", width: 15 },
@@ -119,7 +123,6 @@ const CENTER_ALIGNED_KEYS = new Set([
   "Kabupaten",
   "Qty",
   "Qty Retur",
-  "Diskon",
   "No",
   "Poin",
   "Bergabung Sejak",
@@ -137,6 +140,7 @@ const RIGHT_ALIGNED_KEYS = new Set([
   "Total Akhir",
   "HPP",
   "Margin",
+  "Diskon",
   "PPN",
   "Grand Total",
   "Salesman",
@@ -416,7 +420,7 @@ function transformTransactions(
     const periodYear = getPeriodYear(trx.createdAt);
     const pembayaran = String(trx.paymentMethod || "-").toUpperCase();
     const tipePembayaranRaw = String(trx.paymentStatus || "-");
-    const tipePembayaran = tipePembayaranRaw === 'paid' ? 'Lunas' : tipePembayaranRaw === 'partial' ? 'Cicilan' : tipePembayaranRaw === 'unpaid' ? 'Belum Lunas' : tipePembayaranRaw;
+    const tipePembayaran = tipePembayaranRaw === 'paid' ? 'Lunas' : tipePembayaranRaw === 'partial' ? 'Cicilan' : tipePembayaranRaw === 'unpaid' ? 'Tempo Penuh' : tipePembayaranRaw;
 
     let jatuhTempoStr = "-";
     if (tipePembayaranRaw === 'partial' || tipePembayaranRaw === 'unpaid') {
@@ -442,8 +446,9 @@ function transformTransactions(
           ...baseRow,
           "Nama Produk": item.productName || "-",
           Qty: formatExcelCount(qty),
-          Harga: formatExcelRupiah(price),
-          Total: formatExcelRupiah(subtotal),
+          Harga: formatExcelRupiah(item.originalPrice || price),
+          Total: formatExcelRupiah((item.originalPrice || price) * qty),
+          Diskon: formatExcelRupiah(item.discountAmount || 0),
           "Qty Retur": formatExcelCount(qtyReturn),
           "Nominal Retur": formatExcelRupiah(returnAmount),
           "Sisa Piutang": formatExcelRupiah(sisaPiutang),
@@ -469,6 +474,7 @@ function transformTransactions(
         Qty: "-",
         Harga: "-",
         Total: "-",
+        Diskon: "-",
         "Qty Retur": "-",
         "Nominal Retur": "-",
         "Sisa Piutang": "-",
@@ -561,10 +567,14 @@ export function mapApiTransactionsToExport(
     const mappedItems = rawItems.map((item) => {
       const pId = item.product_id ? String(item.product_id) : '';
       const pName = String(item.product_name ?? item.productName ?? "-");
+      const unitName = String(item.unit_name ?? item.unitName ?? "-").toUpperCase();
       const key = pId || pName;
 
       const price = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 0;
+      const discountAmount = Number(item.discount_amount || item.discountAmount) || 0;
+      const originalPrice = Number(item.original_price || item.originalPrice) || (price + discountAmount);
+      const totalDiscount = discountAmount * quantity;
       const itemSubtotal = price * quantity;
 
       const rData = returnItemMap.get(key) || { qty: 0, amount: 0 };
@@ -588,7 +598,10 @@ export function mapApiTransactionsToExport(
       return {
         productName: pName,
         price,
+        originalPrice,
         quantity,
+        unitName,
+        discountAmount: totalDiscount,
         qtyReturn: rData.qty,
         returnAmount: rData.amount,
         netTotal: itemNet,

@@ -681,8 +681,8 @@ export default function ProductsPage() {
 
           // Tambahkan harga per area
           outlets.forEach((outlet: any) => {
-            const outletPrice = Number((uom.outlet_prices && uom.outlet_prices[outlet.id]) 
-              ? uom.outlet_prices[outlet.id] 
+            const outletPrice = Number((uom.outlet_prices && uom.outlet_prices[outlet.id])
+              ? uom.outlet_prices[outlet.id]
               : basePrice);
             rowData[`Harga (${outlet.name})`] = outletPrice;
           });
@@ -753,25 +753,25 @@ export default function ProductsPage() {
             toast({ title: "Berhasil", description: "File Excel berhasil dibagikan" });
           }).catch((err) => {
             console.error("Error sharing:", err);
-                          const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+            const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
           });
         } else {
-                        const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+          const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
           toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
         }
       };
@@ -1096,7 +1096,7 @@ export default function ProductsPage() {
               toast({ title: "Berhasil", description: "File Excel berhasil dibagikan" });
             }).catch((err) => {
               console.error("Error sharing:", err);
-                            const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+              const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
               const a = document.createElement('a');
               a.href = url;
               a.download = fileName;
@@ -1107,14 +1107,14 @@ export default function ProductsPage() {
               toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
             });
           } else {
-                          const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+            const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
           }
         };
@@ -1156,26 +1156,26 @@ export default function ProductsPage() {
         }
       } catch (err) {
         console.error("Share error:", err);
-                      const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
       }
     } catch (err) {
       console.error("Share error:", err);
-                    const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       toast({ title: "Berhasil", description: "File Excel berhasil diunduh" });
     }
   };
@@ -1963,7 +1963,7 @@ export default function ProductsPage() {
                                         {isDiscount && (
                                           <div className="mt-1.5 px-2 py-1.5 bg-green-50/80 rounded border border-green-100 flex flex-col gap-0.5">
                                             <span className="font-medium text-[10px] text-green-700">🎉 Promo Aktif:</span>
-                                            <span className="text-[10px] text-green-700">Beli min. <strong className="font-semibold">{u.min_qty} {u.unit_name}</strong> &rarr; Diskon <strong className="font-semibold">{u.discount_type === 'percent' ? `${u.discount_value}%` : formatRupiah(u.discount_value)}</strong></span>
+                                            <span className="text-[10px] text-green-700">Beli min. <strong className="font-semibold">{u.min_qty} {u.unit_name}</strong> &rarr; Diskon <strong className="font-semibold">{u.discount_type === 'percent' ? `${u.discount_value}%` : formatRupiah(u.discount_value)}/pcs</strong></span>
                                           </div>
                                         )}
                                       </div>
@@ -2076,7 +2076,7 @@ export default function ProductsPage() {
                                                 {isDiscount && (
                                                   <div className="mt-1.5 px-2 py-1.5 bg-green-50/80 rounded border border-green-100 flex flex-col gap-0.5">
                                                     <span className="font-medium text-[10px] text-green-700">🎉 Promo Aktif:</span>
-                                                    <span className="text-[10px] text-green-700">Beli min. <strong className="font-semibold">{u.min_qty} {u.unit_name}</strong> &rarr; Diskon <strong className="font-semibold">{u.discount_type === 'percent' ? `${u.discount_value}%` : formatRupiah(u.discount_value)}</strong></span>
+                                                    <span className="text-[10px] text-green-700">Beli min. <strong className="font-semibold">{u.min_qty} {u.unit_name}</strong> &rarr; Diskon <strong className="font-semibold">{u.discount_type === 'percent' ? `${u.discount_value}%` : formatRupiah(u.discount_value)}/pcs</strong></span>
                                                   </div>
                                                 )}
                                               </div>
@@ -2188,41 +2188,6 @@ export default function ProductsPage() {
               <Input placeholder="Masukkan harga" value={formData.price} onChange={handlePriceChange} />
             </div>
 
-            {/* Outlet Prices */}
-            {outlets && outlets.length > 0 && (
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Harga Area Cabang
-                  </label>
-                  <p className="text-xs text-slate-400 mt-0.5">Kosongkan jika ingin menggunakan harga default.</p>
-                </div>
-
-                <div className="space-y-3 mt-2">
-                  {outlets?.map((outlet: any) => (
-                    <div key={outlet.id} className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">{outlet.name}</label>
-                      <Input
-                        placeholder="Ikut Default"
-                        value={formData.outletPrices[outlet.id.toString()] || ""}
-                        onChange={(e) => {
-                          const val = formatNumberWithDots(e.target.value);
-                          setFormData(prev => ({
-                            ...prev,
-                            outletPrices: {
-                              ...prev.outletPrices,
-                              [outlet.id.toString()]: val
-                            }
-                          }));
-                          setHasChanges(true);
-                        }}
-                        className="border-0 border-b border-slate-200 dark:border-slate-700 rounded-none px-0 bg-transparent focus-visible:ring-0 focus-visible:border-primary shadow-none focus-visible:ring-offset-0 h-9 text-sm w-full"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Category */}
             <div className="space-y-2">
@@ -2275,7 +2240,7 @@ export default function ProductsPage() {
 
       {/* Discount & UOM Dialog */}
       <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
-        <DialogContent className="sm:max-w-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="sm:max-w-4xl sm:rounded-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
             <DialogTitle>Atur Satuan & Diskon Grosir</DialogTitle>
             <DialogDescription className="text-lg font-bold text-slate-900 dark:text-white mt-1">
@@ -2498,7 +2463,7 @@ export default function ProductsPage() {
                         const minQty = tier.min_qty || 1;
                         const discVal = tier.discount_value ? parseNumberFromDots(String(tier.discount_value)) : 0;
                         const totalBeforeDisc = unitPrice * minQty;
-                        const discountAmount = discVal;
+                        const discountAmount = discVal * minQty;
                         const totalAfterDisc = Math.max(0, totalBeforeDisc - discountAmount);
 
                         return (
@@ -2529,7 +2494,7 @@ export default function ProductsPage() {
                                 </div>
                               </div>
                               <div className="flex-1 sm:w-28 space-y-1">
-                                <label className="text-[10px] font-medium text-slate-500 text-center block" title="Potongan harga untuk keseluruhan qty ini">Total Potongan (Rp)</label>
+                                <label className="text-[10px] font-medium text-slate-500 text-center block" title={`Potongan harga per ${row.unit_name || 'pcs'}`}>Potongan per {row.unit_name || 'Pcs'} (Rp)</label>
                                 <Input
                                   type="text"
                                   inputMode="numeric"
@@ -2587,23 +2552,36 @@ export default function ProductsPage() {
                             {/* Summary Display */}
                             {discVal > 0 && minQty > 0 && (
                               <div className="mt-2 space-y-1">
-                                {/* Default UOM Price */}
-                                <div className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded text-xs flex items-center justify-between gap-2 w-full">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                      {minQty} {(row.unit_name || 'satuan').toUpperCase()}
-                                    </span>
-                                    <span className="text-slate-400 line-through text-[10px]">
-                                      {formatRupiah(totalBeforeDisc)}
-                                    </span>
-                                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                                      {formatRupiah(totalAfterDisc)}
+                                {/* Default UOM Price (Hanya tampil jika tidak ada cabang) */}
+                                {(!outlets || outlets.length === 0) && totalBeforeDisc > 0 && (
+                                  <div className="px-2.5 py-2 bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 rounded flex items-start justify-between gap-3 w-full">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                        {minQty} {(row.unit_name || 'satuan').toUpperCase()}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 line-through font-medium">
+                                        {formatRupiah(totalBeforeDisc)}
+                                      </span>
+                                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                                        {formatRupiah(totalAfterDisc)}
+                                      </span>
+                                      <span className="text-[10px] text-slate-600/80 font-medium">
+                                        ({formatRupiah(totalAfterDisc / minQty)}/{(row.unit_name || 'pcs').toLowerCase()})
+                                      </span>
+                                      {parseNumberFromDots(discountHpp) > 0 && (
+                                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
+                                          (Margin: {formatRupiah(totalAfterDisc - (parseNumberFromDots(discountHpp) * (Number(row.conversion_factor) || 1) * minQty))})
+                                        </span>
+                                      )}
+                                      <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400 ml-1">
+                                        (Diskon: {formatRupiah(totalBeforeDisc - totalAfterDisc)})
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0 mt-0.5">
+                                      HARGA DASAR
                                     </span>
                                   </div>
-                                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider shrink-0">
-                                    PUSAT
-                                  </span>
-                                </div>
+                                )}
 
                                 {/* Area UOM Prices */}
                                 {outlets?.map((outlet: any) => {
@@ -2628,23 +2606,36 @@ export default function ProductsPage() {
 
                                   const outletPrice = getOutletUomPrice(outlet.id.toString());
                                   const outletTotalBefore = outletPrice * minQty;
-                                  const outletDiscountAmount = discVal;
+                                  const outletDiscountAmount = discVal * minQty;
                                   const outletTotalAfter = Math.max(0, outletTotalBefore - outletDiscountAmount);
 
+                                  if (outletTotalBefore <= 0) return null;
+
                                   return (
-                                    <div key={outlet.id} className="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded text-xs flex items-center justify-between gap-2 w-full">
-                                      <div className="flex items-center gap-2 flex-wrap">
+                                    <div key={outlet.id} className="px-2.5 py-2 bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 rounded flex items-start justify-between gap-3 w-full">
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                                           {minQty} {(row.unit_name || 'satuan').toUpperCase()}
                                         </span>
-                                        <span className="text-slate-400 line-through text-[10px]">
+                                        <span className="text-[10px] text-slate-400 line-through font-medium">
                                           {formatRupiah(outletTotalBefore)}
                                         </span>
-                                        <span className="font-bold text-blue-700 dark:text-blue-400">
+                                        <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
                                           {formatRupiah(outletTotalAfter)}
                                         </span>
+                                        <span className="text-[10px] text-slate-600/80 font-medium">
+                                          ({formatRupiah(outletTotalAfter / minQty)}/{(row.unit_name || 'pcs').toLowerCase()})
+                                        </span>
+                                        {parseNumberFromDots(discountHpp) > 0 && (
+                                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                            (Margin: {formatRupiah(outletTotalAfter - (parseNumberFromDots(discountHpp) * (Number(row.conversion_factor) || 1) * minQty))})
+                                          </span>
+                                        )}
+                                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">
+                                          (Diskon: {formatRupiah(outletDiscountAmount)})
+                                        </span>
                                       </div>
-                                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider shrink-0">
+                                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0 mt-0.5">
                                         {outlet.name.toUpperCase()}
                                       </span>
                                     </div>
@@ -2834,23 +2825,7 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {outlets && outlets.length > 0 && detailProduct.outlet_prices && Object.keys(detailProduct.outlet_prices).length > 0 && (
-                <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <label className="text-xs text-slate-500 block mb-2 font-medium">Harga Area Cabang</label>
-                  <div className="bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 p-3 space-y-2">
-                    {outlets.map((outlet: any) => {
-                      const outletPrice = (detailProduct.outlet_prices as any)?.[outlet.id.toString()];
-                      if (!outletPrice) return null;
-                      return (
-                        <div key={outlet.id} className="flex justify-between items-center text-sm">
-                          <span className="text-slate-600 dark:text-slate-300">{outlet.name}</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">{formatRupiah(Number(outletPrice))}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+
 
             </div>
           )}

@@ -42,7 +42,7 @@ export default function PromoPage() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const { data: customers, isLoading } = useListCustomers();
-  
+
   const [templates, setTemplates] = useState<PromoTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<PromoTemplate | null>(null);
   const [customMessage, setCustomMessage] = useState("");
@@ -54,7 +54,7 @@ export default function PromoPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "sent" | "unsent">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  
+
   // Cooldown settings
   const [cooldownDays, setCooldownDays] = useState<number>(() => {
     const saved = localStorage.getItem("promoCooldownDays");
@@ -112,10 +112,10 @@ export default function PromoPage() {
         }
         return;
       }
-      
+
       const allTemplates = [...(data || []), ...DEFAULT_TEMPLATES];
       setTemplates(allTemplates);
-      
+
       if (allTemplates.length > 0 && !selectedTemplate) {
         const initialTemplate = allTemplates[0];
         setSelectedTemplate(initialTemplate);
@@ -135,17 +135,17 @@ export default function PromoPage() {
 
   const filteredCustomers = useMemo(() => {
     if (!customers) return [];
-    
+
     const now = new Date();
 
     const filtered = customers.filter((c: any) => {
-      const matchesSearch = 
-        c.name?.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch =
+        c.name?.toLowerCase().includes(search.toLowerCase()) ||
         c.phone?.includes(search);
-        
+
       let isSent = false;
       const lastSentIso = sentLogs.get(c.id);
-      
+
       if (lastSentIso) {
         const lastSentDate = new Date(lastSentIso);
         const diffTime = Math.abs(now.getTime() - lastSentDate.getTime());
@@ -153,7 +153,7 @@ export default function PromoPage() {
         // It's considered "sent" if it was sent within the cooldown period
         isSent = diffDays <= cooldownDays;
       }
-        
+
       let matchesStatus = true;
       if (statusFilter === "sent") {
         matchesStatus = isSent;
@@ -194,8 +194,8 @@ export default function PromoPage() {
   };
 
   const formatMessage = (
-    message: string, 
-    customerName: string, 
+    message: string,
+    customerName: string,
     dueDate: string = "Tanggal Jatuh Tempo",
     invoiceNumber: string = "Nomor Transaksi",
     orderDate: string = "Tanggal Pemesanan",
@@ -204,7 +204,7 @@ export default function PromoPage() {
   ) => {
     const cleanName = (customerName || "").trim();
     const cleanStore = (storeName || "KANTONG-MAS").trim();
-    
+
     return (message || "")
       .replace(/@/g, `*${cleanName}*`)
       .replace(/#/g, `*${cleanStore}*`)
@@ -236,7 +236,7 @@ export default function PromoPage() {
     let orderDateStr = "-";
     let totalTagihanStr = "-";
     let productDetailsStr = "-";
-    
+
     try {
       const { data } = await supabase
         .from("transactions")
@@ -281,9 +281,9 @@ export default function PromoPage() {
 
     // Menggunakan api.whatsapp.com/send lebih stabil untuk encoding emoji di Android
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
-    
+
     const isTauri = !!(window as any).__TAURI_INTERNALS__;
-    
+
     if (isTauri) {
       try {
         await openShell(whatsappUrl);
@@ -294,9 +294,9 @@ export default function PromoPage() {
     } else {
       window.open(whatsappUrl, "_blank");
     }
-    
+
     toast({ title: "Sukses", description: `Membuka WhatsApp untuk ${customer.name}` });
-    
+
     // Mark as sent locally for immediate UI update
     setSentLogs(prev => {
       const next = new Map(prev);
@@ -319,15 +319,15 @@ export default function PromoPage() {
   const handleResetLogs = async () => {
     if (!confirm("Hapus semua riwayat pengiriman promo? Ini akan memunculkan kembali semua tombol Kirim WA.")) return;
     if (!confirm("PERINGATAN: Fitur ini ditujukan hanya untuk pengembangan dan tujuan testing. Jangan lakukan reset jika tidak sedang dibutuhkan! Anda yakin ingin melanjutkan?")) return;
-    
+
     try {
       const { error } = await supabase
         .from("promo_sent_logs")
         .delete()
         .eq("owner_id", user?.id);
-        
+
       if (error) throw error;
-      
+
       setSentLogs(new Map());
       toast({ title: "Berhasil", description: "Status pengiriman telah direset." });
     } catch (error) {
@@ -360,22 +360,22 @@ export default function PromoPage() {
       if (templateFormData.id > 0) {
         const { error, data } = await supabase
           .from("promo_templates")
-          .update({ 
-            name: templateFormData.name, 
-            content: templateFormData.content 
+          .update({
+            name: templateFormData.name,
+            content: templateFormData.content
           })
           .eq("id", templateFormData.id)
           .select();
-          
+
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("Anda tidak memiliki izin untuk mengedit template ini.");
-        
+
         toast({ title: "Sukses", description: "Template diperbarui" });
       } else {
         const { error } = await supabase
           .from("promo_templates")
-          .insert([{ 
-            name: templateFormData.name, 
+          .insert([{
+            name: templateFormData.name,
             content: templateFormData.content,
             owner_id: user?.id || null // Ensure null if user is undefined
           }]);
@@ -400,10 +400,10 @@ export default function PromoPage() {
         .delete()
         .eq("id", id)
         .select();
-        
+
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Anda tidak memiliki izin untuk menghapus template ini.");
-      
+
       toast({ title: "Sukses", description: "Template dihapus" });
       fetchTemplates();
     } catch (error: any) {
@@ -434,7 +434,7 @@ export default function PromoPage() {
 
         <div className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            
+
             {/* Message Config */}
             <div className="lg:col-span-1 space-y-6">
               <Card className="p-4 border-slate-200 dark:border-slate-700">
@@ -442,11 +442,11 @@ export default function PromoPage() {
                   <MessageSquare className="w-4 h-4 text-primary" />
                   Konfigurasi Pesan
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-500 mb-1.5 block uppercase tracking-wider">Pilih Template</label>
-                    <select 
+                    <select
                       className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       onChange={(e) => handleTemplateChange(e.target.value)}
                       value={selectedTemplate?.id || ""}
@@ -459,7 +459,7 @@ export default function PromoPage() {
 
                   <div>
                     <label className="text-xs font-medium text-slate-500 mb-1.5 block uppercase tracking-wider">Isi Pesan</label>
-                    <Textarea 
+                    <Textarea
                       className="min-h-[200px] text-sm leading-relaxed"
                       value={customMessage}
                       onChange={(e) => setCustomMessage(e.target.value)}
@@ -498,7 +498,7 @@ export default function PromoPage() {
                     className="pl-9 h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl w-full"
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide w-full sm:w-auto shrink-0">
                   <div className="flex bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
                     {[
@@ -511,7 +511,7 @@ export default function PromoPage() {
                         onClick={() => setStatusFilter(opt.id as any)}
                         className={cn(
                           "px-3 h-9 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                          statusFilter === opt.id 
+                          statusFilter === opt.id
                             ? cn("bg-white dark:bg-slate-700 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600", opt.color)
                             : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                         )}
@@ -520,7 +520,7 @@ export default function PromoPage() {
                       </button>
                     ))}
                   </div>
-                  
+
                   <div className="flex bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
                     {[
                       { id: "newest", label: "Terbaru" },
@@ -531,7 +531,7 @@ export default function PromoPage() {
                         onClick={() => setSortOrder(opt.id as any)}
                         className={cn(
                           "px-3 h-9 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                          sortOrder === opt.id 
+                          sortOrder === opt.id
                             ? "bg-white dark:bg-slate-700 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600 text-primary"
                             : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                         )}
@@ -541,9 +541,9 @@ export default function PromoPage() {
                     ))}
                   </div>
 
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={handleResetLogs}
                     className="h-11 w-11 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-red-500 hover:border-red-200 transition-colors shrink-0 ml-auto sm:ml-0"
                     title="Reset Status Pengiriman"
@@ -613,7 +613,7 @@ export default function PromoPage() {
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      
+
                       <div className="flex items-center gap-1 mx-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                           .filter(page => {
@@ -629,7 +629,7 @@ export default function PromoPage() {
                                 onClick={() => setCurrentPage(page)}
                                 className={cn(
                                   "h-8 w-8 rounded-lg text-xs font-bold transition-all",
-                                  currentPage === page 
+                                  currentPage === page
                                     ? "bg-primary text-white shadow-md shadow-primary/20"
                                     : "text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700"
                                 )}
@@ -670,7 +670,7 @@ export default function PromoPage() {
           </DialogHeader>
 
           <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
-            
+
             {/* Cooldown Settings - Compact */}
             <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -682,19 +682,19 @@ export default function PromoPage() {
                   <p className="text-[10px] text-slate-500">Reset otomatis setelah {cooldownDays} hari</p>
                 </div>
               </div>
-              
+
               {isConfiguringCooldown ? (
                 <div className="flex items-center gap-1.5">
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    max="365" 
-                    value={cooldownDays} 
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={cooldownDays}
                     onChange={(e) => setCooldownDays(parseInt(e.target.value) || 1)}
                     className="w-16 h-8 text-center text-xs px-1"
                   />
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="ghost"
                     onClick={() => {
                       localStorage.setItem("promoCooldownDays", cooldownDays.toString());
@@ -707,9 +707,9 @@ export default function PromoPage() {
                   </Button>
                 </div>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsConfiguringCooldown(true)}
                   className="h-8 text-[11px] px-3 border-slate-200 hover:bg-slate-100 dark:border-slate-700"
                 >
@@ -730,22 +730,22 @@ export default function PromoPage() {
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Nama Template</label>
-                    <Input 
+                    <Input
                       value={templateFormData.name}
-                      onChange={(e) => setTemplateFormData({...templateFormData, name: e.target.value})}
+                      onChange={(e) => setTemplateFormData({ ...templateFormData, name: e.target.value })}
                       placeholder="Contoh: Promo Ramadhan"
                       className="h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Isi Pesan</label>
-                    <Textarea 
+                    <Textarea
                       value={templateFormData.content}
-                      onChange={(e) => setTemplateFormData({...templateFormData, content: e.target.value})}
+                      onChange={(e) => setTemplateFormData({ ...templateFormData, content: e.target.value })}
                       placeholder="Tulis isi pesan di sini..."
                       className="min-h-[120px] text-sm resize-none"
                     />
@@ -773,7 +773,7 @@ export default function PromoPage() {
                 <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Daftar Template</h4>
                 <span className="text-[10px] text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{templates.length} Total</span>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-4">
                 {templates.map((t) => (
                   <div key={t.id} className="group flex flex-col p-4 sm:p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-primary/40 hover:shadow-md transition-all duration-200 relative">
@@ -786,22 +786,22 @@ export default function PromoPage() {
                         {t.content}
                       </p>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 absolute bottom-4 left-4 right-4 justify-end bg-white dark:bg-slate-800">
                       {t.id > 0 ? (
                         <>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditTemplate(t)} 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditTemplate(t)}
                             className="h-8 px-3 text-xs gap-2 text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 border border-slate-200 dark:border-slate-700"
                           >
                             <SquarePen className="w-4 h-4" /> Edit
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleDeleteTemplate(t.id)} 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteTemplate(t.id)}
                             className="h-8 px-3 text-xs gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border border-slate-200 dark:border-slate-700"
                           >
                             <Trash2 className="w-4 h-4" /> Hapus
@@ -818,7 +818,7 @@ export default function PromoPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <Button onClick={() => setIsManagingTemplates(false)} className="w-full sm:w-auto px-8">Selesai</Button>
           </div>

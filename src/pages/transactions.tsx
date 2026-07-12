@@ -193,29 +193,26 @@ function TransactionReceiptDialog({
     const storeAddress = displayedAddress || "";
     const storePhone = displayedPhone || "";
 
+    let grossSubtotal = 0;
+    let totalItemDiscounts = 0;
+
     let itemsHtml = trx.transaction_items?.map((item: any, index: number) => {
       const productName = item.product_name || 'Unknown';
       const qty = item.unit_qty !== undefined && item.unit_qty !== null ? item.unit_qty : (item.quantity || 0);
       const unit = item.unit_name || 'pcs';
-      const unitPrice = qty > 0 ? (item.subtotal || 0) / qty : (item.price || 0);
       const subtotal = item.subtotal || 0;
       const baseQty = item.quantity || 0;
+      
       const totalDiscount = (item.discount_amount || 0) * baseQty;
+      totalItemDiscounts += totalDiscount;
+      
       let totalOriginalPrice = (item.original_price || item.price || 0) * baseQty;
-
       if (totalDiscount > 0 && totalOriginalPrice <= subtotal) {
         totalOriginalPrice = subtotal + totalDiscount;
       }
-
-      let discountPercent = 0;
-      if (totalOriginalPrice > subtotal) {
-        const actualDiscount = totalOriginalPrice - subtotal;
-        discountPercent = Math.round((actualDiscount / totalOriginalPrice) * 100);
-      }
+      grossSubtotal += totalOriginalPrice;
 
       const displayOriginalPrice = qty > 0 ? (totalOriginalPrice / qty) : 0;
-      const discountPercentStr = discountPercent > 0 ? `${discountPercent}%` : '-';
-      const discountNominalStr = totalDiscount > 0 ? formatRupiah(totalDiscount) : '-';
 
       return `
         <tr>
@@ -223,9 +220,7 @@ function TransactionReceiptDialog({
           <td style="font-weight: 600; color: #0f172a;">${productName}</td>
           <td style="text-align: center; font-weight: 600; color: #0f172a;">${qty} ${unit}</td>
           <td style="text-align: right; color: #475569;">${formatRupiah(displayOriginalPrice)}</td>
-          <td style="text-align: center; color: #ea580c;">${discountPercentStr}</td>
-          <td style="text-align: right; color: #ea580c;">${discountNominalStr}</td>
-          <td style="text-align: right; font-weight: 700; color: #0f172a;">${formatRupiah(subtotal)}</td>
+          <td style="text-align: right; font-weight: 700; color: #0f172a;">${formatRupiah(displayOriginalPrice * qty)}</td>
         </tr>`;
     }).join('') || '';
 
@@ -235,8 +230,6 @@ function TransactionReceiptDialog({
         itemsHtml += `
           <tr class="empty-row">
             <td style="text-align: center; color: #cbd5e1;">${i + 1}</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
@@ -261,6 +254,12 @@ function TransactionReceiptDialog({
       returnDate = `${dateStr} ,${timeStr}`;
     }
 
+    if (grossSubtotal === 0 && trx.subtotal) {
+      grossSubtotal = trx.subtotal;
+    }
+    const finalTotalDiscount = totalItemDiscounts + (trx.discount || 0);
+
+
     const getInvoiceContentHtml = () => {
       return `
         <div class="invoice-copy">
@@ -271,7 +270,7 @@ function TransactionReceiptDialog({
                   <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
                     <tr>
                       <td style="vertical-align: middle; padding-right: 12px; border: none;">
-                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: -3px;" onerror="this.style.display='none'" />
+                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: 2px;" onerror="this.style.display='none'" />
                       </td>
                       <td style="vertical-align: middle; border: none; padding: 0; text-align: left;">
                         <div class="company-name">${storeName}</div>
@@ -283,7 +282,7 @@ function TransactionReceiptDialog({
                 </td>
                 <td style="width: 40%; text-align: right; vertical-align: top;">
                   <h1 class="invoice-title">FAKTUR PENJUALAN</h1>
-                  <div style="font-size: 10px; font-weight: 700; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
+                  <div style="font-size: 12px; font-weight: 700; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
                     <span class="invoice-status-badge ${trx.payment_status === 'paid' ? 'badge-completed' : 'badge-pending'}">${trx.payment_status === 'paid' ? 'LUNAS' : trx.payment_status === 'partial' ? 'CICILAN' : 'TEMPO'}</span>
                   </div>
                 </td>
@@ -295,7 +294,7 @@ function TransactionReceiptDialog({
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
               <tr>
                 <td style="width: 70%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Kepada Yth.</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -309,7 +308,7 @@ function TransactionReceiptDialog({
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Alamat</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
-                      <td style="padding: 2px 0; font-size: 9.5px; line-height: 1.2;">
+                      <td style="padding: 2px 0; font-size: 11.4px; line-height: 1.2;">
                         ${trx.customers?.address || '-'}
                         ${trx.customers?.district ? `, ${trx.customers?.district}` : ''}
                         ${trx.customers?.city ? `, ${trx.customers?.city}` : ''}
@@ -319,7 +318,7 @@ function TransactionReceiptDialog({
                 </td>
                 <td style="width: 2%;"></td> <!-- Spacer -->
                 <td style="width: 28%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">No. Invoice</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -344,12 +343,10 @@ function TransactionReceiptDialog({
               <thead>
                 <tr>
                   <th style="width: 5%; text-align: center;">No</th>
-                  <th style="width: 32%; text-align: left;">Nama Produk / Item</th>
+                  <th style="width: 47%; text-align: left;">Nama Produk / Item</th>
                   <th style="width: 8%; text-align: center;">Qty</th>
-                  <th style="width: 15%; text-align: right;">Harga Satuan</th>
-                  <th style="width: 10%; text-align: center;">Diskon %</th>
-                  <th style="width: 15%; text-align: right;">Diskon (Rp)</th>
-                  <th style="width: 15%; text-align: right;">Subtotal</th>
+                  <th style="width: 20%; text-align: right;">Harga Satuan</th>
+                  <th style="width: 20%; text-align: right;">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,26 +357,30 @@ function TransactionReceiptDialog({
             <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
               <tr>
                 <td style="width: 55%; vertical-align: top;">
-                  <div style="font-size: 12px; line-height: 1.6; color: #0f172a;">
+                  <div style="font-size: 14.4px; line-height: 1.6; color: #0f172a;">
                     Metode Pembayaran : <strong>${getPaymentLabel(trx.payment_method)}</strong><br>
-                    Status : <strong>${trx.payment_status === 'paid' ? 'Lunas' : trx.payment_status === 'partial' ? 'Cicilan' : 'Tempo'}</strong>
+                    Status : <strong>${trx.payment_status === 'paid' ? 'Lunas' : trx.payment_status === 'partial' ? 'Cicilan' : 'Tempo Penuh'}</strong>
                   </div>
                 </td>
                 <td style="width: 45%; vertical-align: top; text-align: right;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; line-height: 1.4; float: right;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11.4px; line-height: 1.4; float: right;">
+                    <tr>
+                      <td style="color: #475569; font-weight: 500; text-align: left;">Subtotal</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 600;">${formatRupiah(grossSubtotal)}</td>
+                    </tr>
+                    ${finalTotalDiscount > 0 ? `
+                      <tr>
+                        <td style="color: #475569; font-weight: 500; text-align: left;">Diskon</td>
+                        <td style="text-align: right; color: #ea580c; font-weight: 600;">${formatRupiah(finalTotalDiscount)}</td>
+                      </tr>` : ''}
                     ${trx.tax && trx.tax > 0 ? `
                     <tr>
                       <td style="color: #475569; font-weight: 500; text-align: left;">Pajak</td>
                       <td style="text-align: right; color: #0f172a; font-weight: 600;">${formatRupiah(trx.tax)}</td>
                     </tr>` : ''}
-                    ${trx.discount > 0 ? `
-                      <tr>
-                        <td style="color: #475569; font-weight: 500; text-align: left;">Diskon</td>
-                        <td style="text-align: right; color: #ea580c; font-weight: 600;">-${formatRupiah(trx.discount)}</td>
-                      </tr>` : ''}
                     <tr>
-                      <td style="color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 13px;">TOTAL</td>
-                      <td style="text-align: right; color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 13px;">
+                      <td style="color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 15.6px;">${trx.payment_status === 'partial' ? 'TOTAL' : 'GRAND TOTAL'}</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 15.6px;">
                         ${formatRupiah((trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0))}
                       </td>
                     </tr>
@@ -389,14 +390,10 @@ function TransactionReceiptDialog({
                       <td style="text-align: right; color: #0f172a; font-weight: 600;">${formatRupiah(trx.amount_paid || 0)}</td>
                     </tr>
                     <tr>
-                      <td style="color: #ea580c; font-weight: 700; text-align: left;">Sisa Tagihan</td>
-                      <td style="text-align: right; color: #ea580c; font-weight: 800;">${formatRupiah(trx.remaining_balance || 0)}</td>
+                      <td style="color: #ea580c; font-weight: 800; border-top: 1px solid #0f172a; padding-top: 4px; text-align: left; font-size: 15.6px;">GRAND TOTAL</td>
+                      <td style="text-align: right; color: #ea580c; font-weight: 800; border-top: 1px solid #0f172a; padding-top: 4px; font-size: 15.6px;">${formatRupiah(trx.remaining_balance || 0)}</td>
                     </tr>` : ''}
-                    ${trx.payment_status === 'unpaid' ? `
-                    <tr>
-                      <td style="color: #ea580c; font-weight: 700; text-align: left;">Sisa Tagihan (Tempo)</td>
-                      <td style="text-align: right; color: #ea580c; font-weight: 800;">${formatRupiah(trx.remaining_balance || 0)}</td>
-                    </tr>` : ''}
+
                   </table>
                 </td>
               </tr>
@@ -406,14 +403,14 @@ function TransactionReceiptDialog({
           <div>
             <table style="width: 100%; margin-top: 12px; border-collapse: collapse;">
               <tr>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Penerima,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
                     ( _________________ )
                   </div>
                 </td>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Hormat Kami,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
@@ -423,14 +420,14 @@ function TransactionReceiptDialog({
               </tr>
             </table>
             
-            <div style="text-align: left; font-size: 8px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
+            <div style="text-align: left; font-size: 9.6px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
               Pembayaran Transfer melalui Bank: <strong>${storeInfo?.bankName || 'BCA'} ${storeInfo?.bankAccount || '4451377137'}</strong> a/n <strong>${storeInfo?.bankAccountName || 'AULIA USAHA'}</strong>
             </div>
 
             <div class="footer-divider"></div>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="text-align: center; font-size: 8.5px; color: #64748b;">
+                <td style="text-align: center; font-size: 10.2px; color: #64748b;">
                   ${[displayedFooter1, displayedFooter2, displayedFooter3].filter(Boolean).join(' | ') || 'Terima Kasih Sudah Melakukan Order'}
                 </td>
               </tr>
@@ -446,6 +443,12 @@ function TransactionReceiptDialog({
       <head>
         <title>Faktur Penjualan - ${formatInvoiceNumber(trx.id)}</title>
         <style>
+          @font-face {
+            font-family: 'GoogleSansFlex';
+            src: url('${import.meta.env.BASE_URL}GoogleSansFlex_9pt-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
           @page {
             size: auto; /* Biarkan driver printer continuous yang menentukan ukuran */
             margin: 0mm;
@@ -458,11 +461,11 @@ function TransactionReceiptDialog({
           * {
             box-sizing: border-box;
             color: #000000 !important; /* WAJIB HITAM PEKAT agar jelas di printer Dot Matrix */
-            font-family: Arial, Helvetica, sans-serif !important; /* Font standar sistem lebih tajam di dot matrix */
+            font-family: 'GoogleSansFlex', Arial, Helvetica, sans-serif !important; /* Custom font */
             font-weight: bold !important; /* Semua teks ditebalkan */
           }
           body {
-            font-size: 11px;
+            font-size: 13.2px;
             font-weight: 600;
             line-height: 1.35;
             margin: 0;
@@ -488,7 +491,7 @@ function TransactionReceiptDialog({
             justify-content: center;
             text-align: center;
             color: #94a3b8;
-            font-size: 8px;
+            font-size: 9.6px;
             font-weight: 700;
             letter-spacing: 0.15em;
             margin: 1mm 0;
@@ -508,7 +511,7 @@ function TransactionReceiptDialog({
             border-collapse: collapse;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 15.6px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -517,11 +520,11 @@ function TransactionReceiptDialog({
           }
           .company-address, .company-contact {
             margin: 0;
-            font-size: 8.5px;
+            font-size: 10.2px;
             color: #475569;
           }
           .invoice-title {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -529,7 +532,7 @@ function TransactionReceiptDialog({
           }
           .invoice-copy-badge {
             display: inline-block;
-            font-size: 7.5px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.05em;
             padding: 1px 5px;
@@ -541,7 +544,7 @@ function TransactionReceiptDialog({
           }
           .invoice-status-badge {
             display: inline-block;
-            font-size: 7.5px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.05em;
             padding: 1px 5px;
@@ -571,7 +574,7 @@ function TransactionReceiptDialog({
           .metadata-table td {
             padding: 2px 0;
             vertical-align: top;
-            font-size: 10px;
+            font-size: 12px;
           }
           .metadata-table td:first-child, .metadata-table td:nth-child(4) {
             color: #475569;
@@ -584,7 +587,7 @@ function TransactionReceiptDialog({
           }
           .items-table th {
             color: #000000 !important;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
             padding: 4px 6px;
@@ -593,7 +596,7 @@ function TransactionReceiptDialog({
           }
           .items-table td {
             padding: 4px 6px;
-            font-size: 11px;
+            font-size: 13.2px;
             border-bottom: none;
             color: #000000 !important;
           }
@@ -616,7 +619,7 @@ function TransactionReceiptDialog({
             border: 1px solid #e2e8f0;
             border-radius: 4px;
             padding: 6px 10px;
-            font-size: 9.5px;
+            font-size: 11.4px;
             line-height: 1.35;
           }
           .footer-divider {
@@ -635,7 +638,7 @@ function TransactionReceiptDialog({
           }
           .btn {
             padding: 8px 20px;
-            font-size: 12px;
+            font-size: 14.4px;
             font-weight: 600;
             border-radius: 4px;
             cursor: pointer;
@@ -775,7 +778,7 @@ function TransactionReceiptDialog({
                   <span className="font-medium text-right">{trx.customers?.name || "-"}</span>
                 </div>
                 <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-slate-500">Metode</span>
+                  <span className="text-slate-500">Metode Pembayaran</span>
                   <span className="font-medium">{getPaymentLabel(trx.payment_method)}</span>
                 </div>
               </div>
@@ -785,63 +788,70 @@ function TransactionReceiptDialog({
                   const baseQty = item.quantity || 0;
                   const qty = item.unit_qty !== undefined && item.unit_qty !== null ? item.unit_qty : baseQty;
                   const subtotal = item.subtotal || 0;
-
                   const totalDiscount = (item.discount_amount || 0) * baseQty;
+                  
                   let totalOriginalPrice = (item.original_price || item.price || 0) * baseQty;
-
                   if (totalDiscount > 0 && totalOriginalPrice <= subtotal) {
                     totalOriginalPrice = subtotal + totalDiscount;
                   }
-
-                  let discountPercent = 0;
-                  if (totalOriginalPrice > subtotal) {
-                    const actualDiscount = totalOriginalPrice - subtotal;
-                    discountPercent = Math.round((actualDiscount / totalOriginalPrice) * 100);
-                  }
-
                   const displayOriginalPrice = qty > 0 ? (totalOriginalPrice / qty) : 0;
 
                   return (
-                    <div key={item.id} className="flex justify-between gap-2">
+                    <div key={item.id} className="flex justify-between items-start gap-2 break-inside-avoid">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900 break-words">{item.product_name}</p>
-                        <p className="text-slate-500 mt-0.5 text-xs">
+                        <p className="font-bold text-slate-900 break-words">{item.product_name}</p>
+                        <p className="text-slate-700 mt-0.5 text-xs">
                           {qty} x {formatRupiah(displayOriginalPrice)}
-                          {discountPercent > 0 && ` (Diskon: ${discountPercent}%)`}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-slate-900 whitespace-nowrap">{formatRupiah(subtotal)}</p>
-                        {totalDiscount > 0 && (
-                          <p className="text-xs text-orange-600">- {formatRupiah(totalDiscount)}</p>
-                        )}
+                        <p className="font-bold text-slate-900 whitespace-nowrap">{formatRupiah(displayOriginalPrice * qty)}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="space-y-2 py-4 sm:py-6 font-mono text-xs sm:text-sm">
-                <div className="flex justify-between text-slate-600">
-                  <span>Subtotal</span>
-                  <span>{formatRupiah(trx.subtotal)}</span>
-                </div>
+              <div className="border-t border-dashed border-slate-300 dark:border-slate-600 pt-3 mt-3 space-y-1 font-mono text-sm">
+                {(() => {
+                  const grossSubtotal = trx.transaction_items?.reduce((sum: number, item: any) => {
+                    const baseQty = item.quantity || 0;
+                    const subtotal = item.subtotal || 0;
+                    const totalDiscount = (item.discount_amount || 0) * baseQty;
+                    let totalOrig = (item.original_price || item.price || 0) * baseQty;
+                    if (totalDiscount > 0 && totalOrig <= subtotal) totalOrig = subtotal + totalDiscount;
+                    return sum + totalOrig;
+                  }, 0) || trx.subtotal || 0;
+
+                  const totalItemDiscounts = trx.transaction_items?.reduce((sum: number, item: any) => sum + ((item.discount_amount || 0) * (item.quantity || 0)), 0) || 0;
+                  const totalDiscount = totalItemDiscounts + (trx.discount || 0);
+
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
+                        <span className="text-slate-800 dark:text-slate-200">{formatRupiah(grossSubtotal)}</span>
+                      </div>
+                      {totalDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Diskon</span>
+                          <span className="text-slate-800 dark:text-slate-200">{formatRupiah(totalDiscount)}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
                 {trx.tax && trx.tax > 0 ? (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Pajak</span>
-                    <span>{formatRupiah(trx.tax)}</span>
-                  </div>
-                ) : null}
-                {trx.discount && trx.discount > 0 ? (
-                  <div className="flex justify-between text-destructive">
-                    <span>Diskon {trx.discount_note ? `(${trx.discount_note})` : ''}</span>
-                    <span>-{formatRupiah(trx.discount)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Pajak</span>
+                    <span className="text-slate-800 dark:text-slate-200">{formatRupiah(trx.tax)}</span>
                   </div>
                 ) : null}
 
-                <div className="flex justify-between font-bold text-sm sm:text-lg pt-3 sm:pt-4">
-                  <span className="text-slate-900">TOTAL</span>
-                  <span className="text-primary">{formatRupiah((trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0))}</span>
+                <div className="flex justify-between font-bold text-base pt-1 pb-3">
+                  <span className="text-slate-700 dark:text-slate-200">Grand Total</span>
+                  <span className="text-slate-900 dark:text-slate-100">{formatRupiah((trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0))}</span>
                 </div>
               </div>
 
@@ -863,7 +873,7 @@ function TransactionReceiptDialog({
               {trx.payment_status === 'unpaid' && (
                 <div className="space-y-2 py-4 sm:py-6 font-mono text-xs sm:text-sm">
                   <div className="flex justify-between font-bold text-slate-900">
-                    <span>Tagihan (Tempo)</span>
+                    <span>Tagihan (Tempo Penuh)</span>
                     <span className="text-red-600">{formatRupiah(trx.remaining_balance || 0)}</span>
                   </div>
                   {trx.due_date && (

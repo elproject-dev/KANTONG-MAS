@@ -11,7 +11,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Minus, X, CreditCard, Banknote, QrCode, ShoppingCart, Package, Trash2, Printer, Bluetooth, Circle, Store, AlertTriangle, Ruler, Clock, CalendarRange, CheckCircle2, Wallet } from "lucide-react";
+import { Search, Plus, Minus, X, CreditCard, Banknote, QrCode, ShoppingCart, Package, Trash2, Printer, Bluetooth, Circle, Store, AlertTriangle, Ruler, Clock, CalendarRange, CheckCircle2, Wallet, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -170,6 +170,10 @@ export default function POSPage() {
       }));
 
       setCart(newCart);
+      
+      if (editTransactionData.outlet_id) {
+        setSelectedOutlet(String(editTransactionData.outlet_id));
+      }
 
       if (editTransactionData.customer_id) {
         setCustomerId(editTransactionData.customer_id);
@@ -461,7 +465,7 @@ export default function POSPage() {
 
     let uomDiscountAmount = 0;
     if (selectedUnit?.discount_type === 'amount' || selectedUnit?.discount_type === 'nominal') {
-      uomDiscountAmount = (Number(selectedUnit.discount_value) || 0) / (selectedUnit.min_qty || 1);
+      uomDiscountAmount = (Number(selectedUnit.discount_value) || 0);
     } else if (selectedUnit?.discount_type === 'percent') {
       uomDiscountAmount = unitPrice * ((Number(selectedUnit.discount_value) || 0) / 100);
     }
@@ -743,7 +747,7 @@ export default function POSPage() {
     let discountAmountPerUnit = 0;
     if (item.quantity >= (activeUom.min_qty || 1)) {
       if (activeUom.discount_type === 'amount' || activeUom.discount_type === 'nominal') {
-        discountAmountPerUnit = (Number(activeUom.discount_value) || 0) / item.quantity;
+        discountAmountPerUnit = (Number(activeUom.discount_value) || 0);
       } else if (activeUom.discount_type === 'percent') {
         discountAmountPerUnit = basePrice * ((Number(activeUom.discount_value) || 0) / 100);
       }
@@ -1073,7 +1077,7 @@ export default function POSPage() {
           {isEditMode && (
             <div className="bg-amber-100 text-amber-900 p-2 text-sm font-medium text-center shadow-sm">
               <AlertTriangle className="w-4 h-4 inline-block mb-0.5 mr-2" />
-              Mode Edit Transaksi #{editTransactionData?.id ? formatInvoiceNumber(editTransactionData.id) : editId}
+              Mode Edit Transaksi #{editTransactionData?.id ? formatInvoiceNumber(editTransactionData.id) : editId}{editTransactionData?.cashier_name ? ` - ${editTransactionData.cashier_name.toUpperCase()}` : ''}
             </div>
           )}
 
@@ -1284,8 +1288,8 @@ export default function POSPage() {
                                     {formatRupiah(totalItemPrice)}
                                   </p>
                                   {label && (
-                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0 h-4 font-semibold border-0 whitespace-nowrap">
-                                      ðŸ·ï¸ {label}
+                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0 h-4 font-semibold border-0 whitespace-nowrap flex items-center gap-1">
+                                      <Tag className="w-2.5 h-2.5" /> {label}
                                     </Badge>
                                   )}
                                 </div>
@@ -1617,14 +1621,55 @@ export default function POSPage() {
             {/* Summary */}
             <div className="px-4 lg:px-3 pb-4 lg:pb-3">
               <div className="bg-slate-100 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(subtotal)}</span>
-                </div>
+                {(() => {
+                  const grossSubtotal = cart.reduce((sum, item) => sum + (item.quantity * getCartItemPriceAndDiscount(item).price), 0);
+                  const totalItemDiscounts = cart.reduce((sum, item) => sum + (item.quantity * getCartItemPriceAndDiscount(item).discount), 0);
+                  const totalDiscount = totalItemDiscounts + discount;
+
+                  return (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(grossSubtotal)}</span>
+                      </div>
+                      {totalDiscount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500 dark:text-slate-400">Diskon</span>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(totalDiscount)}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+                
+                {enablePPN && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Pajak ({ppnPercentage}%)</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(tax)}</span>
+                  </div>
+                )}
+                
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                  <span className="font-medium text-slate-700 dark:text-slate-200">TOTAL</span>
-                  <span className="text-xl font-bold text-primary dark:text-primary-400">{formatRupiah(total)}</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">
+                    {paymentType === "dp" ? "TOTAL" : "GRAND TOTAL"}
+                  </span>
+                  <span className={paymentType === "dp" ? "font-bold text-slate-700 dark:text-slate-200" : "text-xl font-bold text-primary dark:text-primary-400"}>
+                    {formatRupiah(total)}
+                  </span>
                 </div>
+                
+                {paymentType === "dp" && (
+                  <>
+                    <div className="flex justify-between items-center text-sm pt-1 pb-1">
+                      <span className="text-slate-500 dark:text-slate-400">Cicilan Dibayar</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(amountPaid)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                      <span className="font-medium text-slate-700 dark:text-slate-200">GRAND TOTAL</span>
+                      <span className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatRupiah(Math.max(0, total - amountPaid))}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1741,67 +1786,94 @@ export default function POSPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <div>{item.quantity} {item.unitName} x {formatRupiah(item.unitPrice)}</div>
-                        {activeDiscount > 0 && (
-                          <div className="text-[10px] text-slate-600 mt-0.5 italic">
-                            Diskon: -{formatRupiah(activeDiscount * item.quantity)} {item.uomLabel ? `(${item.uomLabel})` : ''}
-                          </div>
-                        )}
                       </div>
-                      <p className="font-bold text-slate-900 dark:text-slate-100">{formatRupiah(item.quantity * itemPrice)}</p>
+                      <p className="font-bold text-slate-900 dark:text-slate-100">{formatRupiah(item.quantity * item.unitPrice)}</p>
                     </div>
                   </div>
                 );
               })}
 
-              <div className="border-t border-dashed border-slate-200 dark:border-slate-700 pt-2 mt-2 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-600 dark:text-slate-400">Metode</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{getPaymentMethodLabel(lastTransaction?.paymentMethod || '')}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
-                  <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.subtotal || 0)}</span>
-                </div>
+              <div className="border-t border-dashed border-slate-300 dark:border-slate-600 pt-3 mt-3 space-y-1 font-mono text-sm">
+                {(() => {
+                  const grossSubtotal = lastTransaction?.items?.reduce((sum: number, item: any) => sum + (item.quantity * (item.unitPrice || 0)), 0) || lastTransaction?.subtotal || 0;
+                  const totalItemDiscounts = lastTransaction?.items?.reduce((sum: number, item: any) => {
+                    const activeDiscount = item.quantity >= (item.uomMinQty || 1) ? (item.uomDiscountAmount || 0) : 0;
+                    return sum + (item.quantity * activeDiscount);
+                  }, 0) || 0;
+                  const totalDiscount = totalItemDiscounts + (lastTransaction?.discount || 0);
 
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>{formatRupiah(grossSubtotal)}</span>
+                      </div>
+                      {totalDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span>Diskon</span>
+                          <span>{formatRupiah(totalDiscount)}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {lastTransaction?.enablePPN && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">Pajak ({lastTransaction?.ppnPercentage || 11}%)</span>
-                    <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.tax || 0)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Pajak ({lastTransaction?.ppnPercentage || 11}%)</span>
+                    <span className="text-slate-800 dark:text-slate-200">{formatRupiah(lastTransaction?.tax || 0)}</span>
                   </div>
                 )}
-                {(lastTransaction?.discount || 0) > 0 && (
-                  <div className="flex justify-between text-xs text-red-600 dark:text-red-400">
-                    <span>Diskon {lastTransaction?.discountNote && `(${lastTransaction.discountNote})`}</span>
-                    <span>-{formatRupiah(lastTransaction?.discount || 0)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-bold text-base pt-2">
-                  <span className="text-slate-700 dark:text-slate-200">TOTAL</span>
+                <div className="flex justify-between font-bold text-base pt-1 pb-3">
+                  <span className="text-slate-700 dark:text-slate-200">
+                    {lastTransaction?.payment_status === 'partial' ? 'Total' : 'Grand Total'}
+                  </span>
                   <span className="text-slate-900 dark:text-slate-100">{formatRupiah(lastTransaction?.total || 0)}</span>
                 </div>
-                {lastTransaction?.payment_status === 'partial' ? (
+                {lastTransaction?.payment_status === 'partial' && (
                   <>
-                    <div className="flex justify-between text-xs pt-2">
-                      <span className="text-slate-500 dark:text-slate-400">Cicilan ({getPaymentMethodLabel(lastTransaction?.paymentMethod || '')})</span>
-                      <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.amountPaid || lastTransaction?.amount_paid || 0)}</span>
+                    <div className="flex justify-between text-sm pb-1">
+                      <span className="text-slate-600 dark:text-slate-400">Cicilan</span>
+                      <span className="text-slate-800 dark:text-slate-200">{formatRupiah(lastTransaction?.amountPaid || lastTransaction?.amount_paid || 0)}</span>
                     </div>
-                    <div className="flex justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
-                      <span>Kekurangan Pembayaran</span>
-                      <span>{formatRupiah(lastTransaction?.remaining_balance || 0)}</span>
+                    <div className="flex justify-between font-bold text-base pt-1 pb-3 border-t border-slate-200 dark:border-slate-700">
+                      <span className="text-orange-600 dark:text-orange-500">Grand Total</span>
+                      <span className="text-orange-600 dark:text-orange-500">{formatRupiah(lastTransaction?.remaining_balance || 0)}</span>
                     </div>
                   </>
-                ) : lastTransaction?.payment_status === 'unpaid' ? (
-                  <div className="flex justify-between text-xs font-bold text-amber-600 dark:text-amber-400 pt-2">
-                    <span>Kekurangan Pembayaran</span>
-                    <span>{formatRupiah(lastTransaction?.remaining_balance || 0)}</span>
-                  </div>
-                ) : (
-                  <div className="flex justify-between text-xs pt-2">
-                    <span className="text-slate-500 dark:text-slate-400">Metode Pembayaran</span>
-                    <span className="text-slate-700 dark:text-slate-300 font-bold">{getPaymentMethodLabel(lastTransaction?.paymentMethod || '')}</span>
-                  </div>
                 )}
 
+                <div className="pt-2">
+                  <div className="flex justify-between text-sm pb-1">
+                    <span className="lowercase text-slate-500 dark:text-slate-400">metode pembayaran</span>
+                    <span className="lowercase font-medium text-slate-700 dark:text-slate-300">
+                      {getPaymentMethodLabel(lastTransaction?.paymentMethod || '')} 
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm pb-1">
+                    <span className="lowercase text-slate-500 dark:text-slate-400">status</span>
+                    <span className={`font-bold ${
+                      lastTransaction?.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                      lastTransaction?.payment_status === 'partial' ? 'text-amber-600 dark:text-amber-400' :
+                      'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {lastTransaction?.payment_status === 'paid' ? 'LUNAS' : lastTransaction?.payment_status === 'partial' ? 'CICILAN' : 'TEMPO PENUH'}
+                    </span>
+                  </div>
+                  {lastTransaction?.payment_status === 'unpaid' && (
+                    <div className="flex justify-between text-sm">
+                      <span className="lowercase text-slate-500 dark:text-slate-400">kekurangan</span>
+                      <span className="text-slate-700 dark:text-slate-300">{formatRupiah(lastTransaction?.remaining_balance || 0)}</span>
+                    </div>
+                  )}
+                  {lastTransaction?.due_date && (lastTransaction?.payment_status === 'partial' || lastTransaction?.payment_status === 'unpaid') && (
+                    <div className="flex justify-between text-sm">
+                      <span className="lowercase text-slate-500 dark:text-slate-400">jatuh tempo</span>
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {new Date(lastTransaction.due_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1897,7 +1969,7 @@ export default function POSPage() {
                           <div className="text-[10px] text-slate-500 dark:text-slate-400">1 {uom.unit_name} = {uom.conversion_factor} {getBaseUnitName(uomSelectorProduct)}</div>
                         )}
                         {uom.label && (
-                          <div className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">ðŸ·ï¸ {uom.label}</div>
+                          <div className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1"><Tag className="w-3 h-3" /> {uom.label}</div>
                         )}
                       </div>
                     </div>
