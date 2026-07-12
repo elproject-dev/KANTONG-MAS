@@ -24,6 +24,7 @@ import {
   getBluetoothPrinterMac,
   isBluetoothAvailable
 } from "@/lib/bluetooth-printer";
+import { isTauriDesktop, printTauriReceipt, isTauriPrinterReady } from "@/lib/tauri-bluetooth-printer";
 import {
   showPrinterNotConnectedNotification,
   showPrintSuccessNotification
@@ -90,6 +91,64 @@ function TransactionReceiptDialog({
   const handlePrintReceipt = async () => {
     if (!trx) return;
 
+    // ── Tauri Desktop: gunakan printTauriReceipt ──
+    if (isTauriDesktop()) {
+      if (!isTauriPrinterReady()) {
+        void showPrinterNotConnectedNotification('Printer Desktop belum dipilih. Buka Pengaturan \u2192 Printer Desktop (Tauri) untuk memilih printer.');
+        return;
+      }
+      setIsPrinting(true);
+      try {
+        const receiptCustomerName = trx.customers?.name || trx.customerName || trx.customer_name || "Umum";
+        const items = trx.transaction_items?.map((item: any) => ({
+          productId: item.product_id,
+          productName: item.product_name,
+          quantity: item.quantity,
+          price: item.price
+        })) || [];
+        const total = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0);
+        const showFooter = localStorage.getItem('showFooter') !== 'false';
+
+        const printData = {
+          ...trx,
+          cashierName: trx.cashier_name,
+          items,
+          tax: trx.tax || 0,
+          ppnPercentage: 11,
+          discount: trx.discount || 0,
+          discountNote: trx.discount_note || '',
+          customerName: receiptCustomerName,
+          total: total,
+          amountPaid: trx.amount_paid || 0,
+          change: trx.change || 0,
+          paymentMethod: trx.payment_method || 'cash',
+          storeName: displayedStoreName,
+          storeAddress: displayedAddress,
+          storePhone: displayedPhone,
+          footerMessage: showFooter ? (trx?.outlets?.footer_message || localStorage.getItem('footerMessage') || '') : '',
+          footerMessage2: showFooter ? (trx?.outlets?.footer_message2 || localStorage.getItem('footerMessage2') || '') : '',
+          footerMessage3: showFooter ? (trx?.outlets?.footer_message3 || localStorage.getItem('footerMessage3') || '') : '',
+        };
+
+        console.log('[Tauri] Printing receipt via Tauri...');
+        const result = await printTauriReceipt(printData);
+        if (!result.success) {
+          void showPrinterNotConnectedNotification(result.message);
+        } else {
+          void showPrintSuccessNotification(total, formatInvoiceNumber(trx.id));
+        }
+      } catch (error) {
+        console.error('[Tauri] Print error:', error);
+        void showPrinterNotConnectedNotification(
+          error instanceof Error ? error.message : 'Terjadi kesalahan saat mencetak struk.'
+        );
+      } finally {
+        setIsPrinting(false);
+      }
+      return;
+    }
+
+    // ── Android / Mobile: alur Bluetooth lama ──
     if (!isBluetoothAvailable()) {
       void showPrinterNotConnectedNotification('Plugin Bluetooth tidak tersedia di perangkat ini.');
       return;
@@ -896,16 +955,31 @@ function TransactionReceiptDialog({
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-white flex justify-between items-center gap-2 shrink-0">
-              <div className="flex-1">
+            <div className="p-4 border-t border-slate-200 bg-white flex justify-between items-center gap-2 shrink-0 overflow-x-auto">
+              <div className="flex-1 flex gap-2">
                 {isAdmin ? (
-                  !(Capacitor.getPlatform() === 'android') && (
-                    <Button variant="outline" onClick={handlePrintInvoice}>
+                  <>
+                    {!(Capacitor.getPlatform() === 'android') && (
+                      <Button variant="outline" onClick={handlePrintInvoice}>
+                        <Printer className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Cetak Faktur</span>
+                        <span className="sm:hidden">Faktur</span>
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={handlePrintReceipt} disabled={isPrinting}>
                       <Printer className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Cetak Faktur</span>
-                      <span className="sm:hidden">Cetak</span>
+                      {isPrinting ? (
+                        <span className="hidden sm:inline">Mencetak...</span>
+                      ) : (
+                        <span className="hidden sm:inline">Cetak Struk</span>
+                      )}
+                      {isPrinting ? (
+                        <span className="sm:hidden">Proses</span>
+                      ) : (
+                        <span className="sm:hidden">Struk</span>
+                      )}
                     </Button>
-                  )
+                  </>
                 ) : (
                   <Button variant="outline" onClick={handlePrintReceipt} disabled={isPrinting}>
                     <Printer className="w-4 h-4 mr-2" />

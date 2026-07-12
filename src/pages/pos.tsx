@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { getProductImageUrl as getProductImageUrlFromStorage } from "@/lib/supabase-storage";
 import { connectToPrinter, disconnectPrinter, printReceipt, getAutoPrintSetting, getBluetoothPrinterMac, isBluetoothAvailable } from "@/lib/bluetooth-printer";
+import { isTauriDesktop, printTauriReceipt, isTauriPrinterReady } from "@/lib/tauri-bluetooth-printer";
 import { showTransactionSuccessNotification, showPrinterNotConnectedNotification, showPrintSuccessNotification } from "@/lib/android-notifications";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card } from "@/components/ui/card";
@@ -135,10 +136,9 @@ export default function POSPage() {
   const [discountDisplay, setDiscountDisplay] = useState<string>("");
   const [discountStr, setDiscountStr] = useState<string>("");
   const [discountNote, setDiscountNote] = useState<string>("");
-  const [discountNoteOptions, setDiscountNoteOptions] = useState<string[]>([]);
+  const [discountNoteOptions, setDiscountNoteOptions] = useState<string[]>(getDefaultDiscountNotes());
   const [isCustomDiscountNote, setIsCustomDiscountNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const enableDiscount = false;
   const defaultDiscountPrice = "0";
   const enablePPN = false;
   const ppnPercentage = 11;
@@ -170,7 +170,7 @@ export default function POSPage() {
       }));
 
       setCart(newCart);
-      
+
       if (editTransactionData.outlet_id) {
         setSelectedOutlet(String(editTransactionData.outlet_id));
       }
@@ -212,6 +212,7 @@ export default function POSPage() {
   const [qtyInput, setQtyInput] = useState<number>(1);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const enableDiscount = isAdmin;
 
   // Initialize outlet: Kasir's specific outlet for Kasir, Admin's assigned outlet if set, otherwise 'all'
   const [selectedOutlet, setSelectedOutlet] = useState<string>(() => {
@@ -354,6 +355,46 @@ export default function POSPage() {
       }
     };
 
+    // ── Tauri Desktop: gunakan printTauriReceipt ──
+    if (isTauriDesktop()) {
+      if (!isTauriPrinterReady()) {
+        showError('Printer Desktop belum dipilih. Buka Pengaturan → Printer Desktop (Tauri) untuk memilih printer.');
+        return;
+      }
+      setIsPrinting(true);
+      try {
+        const activeOutletObj = outlets?.find(o => o.id.toString() === selectedOutlet);
+        const showFooter = storeSettingsData?.show_footer ?? true;
+        const printData = {
+          ...transaction,
+          storeName: storeSettingsData?.bluetooth_store_name || storeSettingsData?.name || 'KANTONG-MAS',
+          storeAddress: storeSettingsData?.address || '',
+          storePhone: storeSettingsData?.phone || '',
+          footerMessage: showFooter ? (activeOutletObj?.footer_message || storeSettingsData?.footer_message || '') : '',
+          footerMessage2: showFooter ? (activeOutletObj?.footer_message2 || storeSettingsData?.footer_message2 || '') : '',
+          footerMessage3: showFooter ? (activeOutletObj?.footer_message3 || storeSettingsData?.footer_message3 || '') : '',
+        };
+        console.log('[Tauri] Printing receipt via Tauri...', printData);
+        const result = await printTauriReceipt(printData);
+        if (!result.success) {
+          showError(result.message);
+        } else if (options?.showSuccessNotification) {
+          const invoiceId = transaction?.id ?? transaction?.transaction_id;
+          void showPrintSuccessNotification(
+            transaction?.total ?? 0,
+            invoiceId != null ? formatInvoiceNumber(invoiceId) : undefined
+          );
+        }
+      } catch (error) {
+        console.error('[Tauri] Print error:', error);
+        showError(error instanceof Error ? error.message : 'Terjadi kesalahan saat mencetak struk.');
+      } finally {
+        setIsPrinting(false);
+      }
+      return;
+    }
+
+    // ── Android / Mobile: alur Bluetooth lama ──
     if (!isBluetoothAvailable()) {
       console.error('Bluetooth plugin not available');
       showError('Plugin Bluetooth tidak tersedia di perangkat ini.');
@@ -454,6 +495,13 @@ export default function POSPage() {
     const formattedValue = formatNumberWithDots(rawValue);
     setAmountPaidDisplay(formattedValue);
     setAmountPaidStr(formattedValue);
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const formattedValue = formatNumberWithDots(rawValue);
+    setDiscountDisplay(formattedValue);
+    setDiscountStr(formattedValue);
   };
 
 
@@ -1616,7 +1664,29 @@ export default function POSPage() {
               </div>
             )}
 
-
+            {/* Discount Section for Admin */}
+            {enableDiscount && (
+              <div className="px-4 lg:px-3 pb-4 lg:pb-3">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                  <label className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Tag className="w-3.5 h-3.5" />
+                    Diskon Admin (Rp)
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 font-medium text-sm">Rp</span>
+                      <Input
+                        type="text"
+                        value={discountDisplay}
+                        onChange={handleDiscountChange}
+                        className="pl-9 h-9 border-emerald-200 focus-visible:ring-emerald-500 font-bold bg-white dark:bg-slate-900"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Summary */}
             <div className="px-4 lg:px-3 pb-4 lg:pb-3">
@@ -1641,14 +1711,14 @@ export default function POSPage() {
                     </>
                   );
                 })()}
-                
+
                 {enablePPN && (
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500 dark:text-slate-400">Pajak ({ppnPercentage}%)</span>
                     <span className="font-medium text-slate-900 dark:text-slate-100">{formatRupiah(tax)}</span>
                   </div>
                 )}
-                
+
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
                   <span className="font-medium text-slate-700 dark:text-slate-200">
                     {paymentType === "dp" ? "TOTAL" : "GRAND TOTAL"}
@@ -1657,7 +1727,7 @@ export default function POSPage() {
                     {formatRupiah(total)}
                   </span>
                 </div>
-                
+
                 {paymentType === "dp" && (
                   <>
                     <div className="flex justify-between items-center text-sm pt-1 pb-1">
@@ -1846,16 +1916,15 @@ export default function POSPage() {
                   <div className="flex justify-between text-sm pb-1">
                     <span className="lowercase text-slate-500 dark:text-slate-400">metode pembayaran</span>
                     <span className="lowercase font-medium text-slate-700 dark:text-slate-300">
-                      {getPaymentMethodLabel(lastTransaction?.paymentMethod || '')} 
+                      {getPaymentMethodLabel(lastTransaction?.paymentMethod || '')}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm pb-1">
                     <span className="lowercase text-slate-500 dark:text-slate-400">status</span>
-                    <span className={`font-bold ${
-                      lastTransaction?.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
-                      lastTransaction?.payment_status === 'partial' ? 'text-amber-600 dark:text-amber-400' :
-                      'text-rose-600 dark:text-rose-400'
-                    }`}>
+                    <span className={`font-bold ${lastTransaction?.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                        lastTransaction?.payment_status === 'partial' ? 'text-amber-600 dark:text-amber-400' :
+                          'text-rose-600 dark:text-rose-400'
+                      }`}>
                       {lastTransaction?.payment_status === 'paid' ? 'LUNAS' : lastTransaction?.payment_status === 'partial' ? 'CICILAN' : 'TEMPO PENUH'}
                     </span>
                   </div>

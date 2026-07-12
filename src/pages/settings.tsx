@@ -5,9 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Store, Printer, Bell, Type, Percent, Bluetooth, CheckCircle, XCircle, Loader2, Search, Tag, Plus, Trash2, Palette, Building2, ChevronDown, Info, ExternalLink, User, LogOut } from "lucide-react";
+import { Settings, Store, Printer, Bell, Type, Percent, Bluetooth, Usb, CheckCircle, XCircle, Loader2, Search, Tag, Plus, Trash2, Palette, Building2, ChevronDown, Info, ExternalLink, User, LogOut } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { connectToPrinter, disconnectPrinter, listBluetoothDevices, isBluetoothAvailable } from "@/lib/bluetooth-printer";
+import {
+  isTauriDesktop,
+  listTauriUsbPrinters,
+  setTauriPrinterDevice,
+  clearTauriPrinterDevice,
+  getTauriPrinterMac,
+  getTauriPrinterName,
+  isTauriPrinterReady,
+  testTauriPrint,
+  type TauriUsbPrinter,
+} from "@/lib/tauri-bluetooth-printer";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -216,6 +227,16 @@ export default function SettingsPage() {
   const [bluetoothDevices, setBluetoothDevices] = useState<Array<{ name: string; address: string }>>([]);
   const [showDeviceList, setShowDeviceList] = useState(false);
 
+  // Tauri Desktop Printer State (USB)
+  const [tauriPrinterMac, setTauriPrinterMac] = useState(() => getTauriPrinterMac());
+  const [tauriPrinterName, setTauriPrinterName] = useState(() => getTauriPrinterName());
+  const [isScanningTauri, setIsScanningTauri] = useState(false);
+  const [isTestingTauri, setIsTestingTauri] = useState(false);
+  const [tauriUsbPrinters, setTauriUsbPrinters] = useState<TauriUsbPrinter[]>([]);
+  const [showTauriDeviceList, setShowTauriDeviceList] = useState(false);
+  const [tauriTestStatus, setTauriTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [tauriTestMessage, setTauriTestMessage] = useState('');
+
   // Auto-save: Font Size - apply to root element
   useEffect(() => {
     localStorage.setItem('fontSize', fontSize);
@@ -350,6 +371,68 @@ export default function SettingsPage() {
       setIsScanning(false);
     }
   };
+
+  // ── Tauri USB Printer Handlers ─────────────────────────────────
+  const handleTauriListPrinters = async () => {
+    setIsScanningTauri(true);
+    setShowTauriDeviceList(false);
+    try {
+      const result = await listTauriUsbPrinters();
+      if (result.success && result.printers.length > 0) {
+        setTauriUsbPrinters(result.printers);
+        setShowTauriDeviceList(true);
+        toast({ title: 'Sukses', description: result.message });
+      } else {
+        toast({ title: result.success ? 'Tidak Ada Printer' : 'Gagal', description: result.message, variant: result.success ? 'default' : 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Gagal mendaftar printer', variant: 'destructive' });
+    } finally {
+      setIsScanningTauri(false);
+    }
+  };
+
+  const handleTauriSelectDevice = (printerName: string) => {
+    setTauriPrinterDevice(printerName, printerName);
+    setTauriPrinterMac(printerName);
+    setTauriPrinterName(printerName);
+    setShowTauriDeviceList(false);
+    setTauriTestStatus('idle');
+    toast({ title: 'Printer Dipilih', description: printerName });
+  };
+
+  const handleTauriClearDevice = () => {
+    clearTauriPrinterDevice();
+    setTauriPrinterMac('');
+    setTauriPrinterName('');
+    setTauriTestStatus('idle');
+    toast({ title: 'Printer Dihapus', description: 'Pilihan printer Desktop telah dihapus.' });
+  };
+
+  const handleTauriTestPrint = async () => {
+    setIsTestingTauri(true);
+    setTauriTestStatus('idle');
+    try {
+      const result = await testTauriPrint();
+      if (result.success) {
+        setTauriTestStatus('success');
+        setTauriTestMessage(result.message);
+        toast({ title: 'Test Print Berhasil', description: result.message });
+      } else {
+        setTauriTestStatus('error');
+        setTauriTestMessage(result.message);
+        toast({ title: 'Test Print Gagal', description: result.message, variant: 'destructive' });
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'Terjadi kesalahan saat test print.';
+      setTauriTestStatus('error');
+      setTauriTestMessage(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsTestingTauri(false);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────
 
   const handleOpenAppPermissions = async () => {
     try {
@@ -667,6 +750,132 @@ export default function SettingsPage() {
               )}
 
             </CollapsibleCard>
+
+            {/* Tauri Desktop USB Printer Settings - Only visible in Tauri app */}
+            {isTauriDesktop() && (
+              <CollapsibleCard
+                id="printer-desktop"
+                title="Printer Desktop (USB)"
+                icon={Printer}
+                description="Konfigurasi printer USB untuk cetak struk"
+                isOpen={openCard === 'printer-desktop'}
+                onToggle={toggleCard}
+              >
+                {/* Info Banner */}
+                <div className="mb-5 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <Printer className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Printer USB Desktop</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Pastikan printer thermal sudah <strong>terhubung via USB</strong> dan driver sudah terinstall di Windows.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selected Printer Display */}
+                <div className="space-y-2 mb-5">
+                  <Label className="text-sm font-medium">Printer Aktif</Label>
+                  <div className="flex gap-3">
+                    <div className="flex-1 flex items-center gap-3 h-11 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${tauriPrinterName ? 'bg-green-500' : 'bg-slate-300'}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{tauriPrinterName || 'Belum ada printer dipilih'}</p>
+                      </div>
+                    </div>
+                    {tauriPrinterName && (
+                      <Button variant="ghost" size="icon" className="h-11 w-11 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleTauriClearDevice} title="Hapus pilihan printer">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* List Printers Button */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Daftar Printer USB</Label>
+                  <Button onClick={handleTauriListPrinters} disabled={isScanningTauri} variant="outline" className="w-full h-11">
+                    {isScanningTauri ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Memuat...</>
+                    ) : (
+                      <><Search className="w-4 h-4 mr-2" />Tampilkan Printer</>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Printer List */}
+                {showTauriDeviceList && tauriUsbPrinters.length > 0 && (
+                  <div className="mt-4 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 text-sm font-medium text-slate-900 dark:text-slate-100">
+                      Printer Tersedia ({tauriUsbPrinters.length})
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {tauriUsbPrinters.map((printer, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-4 border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <Printer className="w-4 h-4 text-slate-400 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{printer.name}</p>
+                              {printer.is_default && <p className="text-xs text-emerald-600 dark:text-emerald-400">Default Printer</p>}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant={tauriPrinterName === printer.name ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => handleTauriSelectDevice(printer.name)}
+                            className="shrink-0 h-9 px-3"
+                          >
+                            {tauriPrinterName === printer.name ? 'Dipilih ✓' : 'Pilih'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Test Print Button */}
+                <Button
+                  type="button"
+                  onClick={handleTauriTestPrint}
+                  disabled={isTestingTauri || !tauriPrinterName}
+                  variant="outline"
+                  className="w-full mt-4 h-11"
+                >
+                  {isTestingTauri ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Mencetak Test...</>
+                  ) : (
+                    <><Printer className="w-4 h-4 mr-2" />Test Cetak Struk</>
+                  )}
+                </Button>
+
+                {/* Test Status */}
+                {tauriTestStatus !== 'idle' && (
+                  <div className={`mt-4 flex items-center gap-3 text-sm p-4 rounded-xl ${
+                    tauriTestStatus === 'success'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300'
+                      : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300'
+                  }`}>
+                    {tauriTestStatus === 'success' ? (
+                      <><CheckCircle className="w-5 h-5 shrink-0" /><span>{tauriTestMessage}</span></>
+                    ) : (
+                      <><XCircle className="w-5 h-5 shrink-0" /><span>{tauriTestMessage}</span></>
+                    )}
+                  </div>
+                )}
+
+                {/* Info footer */}
+                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    🖨️ Printer USB mengirim data ESC/POS langsung ke printer thermal. Pastikan printer thermal sudah terhubung dan menyala.
+                  </p>
+                </div>
+              </CollapsibleCard>
+            )}
 
             {/* Appearance Settings */}
             <CollapsibleCard id="appearance" title="Tampilan" icon={Type} description="Konfigurasi tampilan aplikasi" isOpen={openCard === 'appearance'} onToggle={toggleCard}>

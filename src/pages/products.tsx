@@ -1580,7 +1580,7 @@ export default function ProductsPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-blue-100 text-xs sm:text-sm font-medium">Total Jenis Barang</p>
                         <p className="text-lg sm:text-lg md:text-xl font-bold text-white leading-tight mt-1 truncate">
-                          {stockStats.totalItems}
+                          {stockStats.totalItems.toLocaleString('id-ID')}
                         </p>
                       </div>
                       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -1598,7 +1598,7 @@ export default function ProductsPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-purple-100 text-xs sm:text-sm font-medium">Total Stok Gudang</p>
                         <p className="text-lg sm:text-lg md:text-xl font-bold text-white leading-tight mt-1 truncate">
-                          {stockStats.totalStock}
+                          {stockStats.totalStock.toLocaleString('id-ID')}
                         </p>
                       </div>
                       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -1616,7 +1616,7 @@ export default function ProductsPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-red-100 text-xs sm:text-sm font-medium">Stok Habis</p>
                         <p className="text-lg sm:text-lg md:text-xl font-bold text-white leading-tight mt-1 truncate">
-                          {stockStats.outOfStock}
+                          {stockStats.outOfStock.toLocaleString('id-ID')}
                         </p>
                       </div>
                       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -1634,7 +1634,7 @@ export default function ProductsPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-amber-100 text-xs sm:text-sm font-medium">Stok Menipis</p>
                         <p className="text-lg sm:text-lg md:text-xl font-bold text-white leading-tight mt-1 truncate">
-                          {stockStats.lowStock}
+                          {stockStats.lowStock.toLocaleString('id-ID')}
                         </p>
                       </div>
                       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">

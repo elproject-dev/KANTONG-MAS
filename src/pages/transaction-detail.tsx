@@ -17,6 +17,7 @@ import {
   getBluetoothPrinterMac,
   isBluetoothAvailable
 } from "@/lib/bluetooth-printer";
+import { isTauriDesktop, printTauriReceipt, isTauriPrinterReady } from "@/lib/tauri-bluetooth-printer";
 import {
   showPrinterNotConnectedNotification,
   showPrintSuccessNotification
@@ -63,6 +64,64 @@ export default function TransactionDetailPage() {
   const handlePrintReceipt = async () => {
     if (!trx) return;
 
+    // ── Tauri Desktop: gunakan printTauriReceipt ──
+    if (isTauriDesktop()) {
+      if (!isTauriPrinterReady()) {
+        void showPrinterNotConnectedNotification('Printer Desktop belum dipilih. Buka Pengaturan \u2192 Printer Desktop (Tauri) untuk memilih printer.');
+        return;
+      }
+      setIsPrinting(true);
+      try {
+        const receiptCustomerName = trx.customers?.name || trx.customerName || trx.customer_name || "Umum";
+        const items = trx.transaction_items?.map((item: any) => ({
+          productId: item.product_id,
+          productName: item.product_name,
+          quantity: item.quantity,
+          price: item.price
+        })) || [];
+        const total = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0);
+        const showFooter = localStorage.getItem('showFooter') !== 'false';
+
+        const printData = {
+          ...trx,
+          cashierName: trx.cashier_name,
+          items,
+          tax: trx.tax || 0,
+          ppnPercentage: 11,
+          discount: trx.discount || 0,
+          discountNote: trx.discount_note || '',
+          customerName: receiptCustomerName,
+          total: total,
+          amountPaid: trx.amount_paid || 0,
+          change: trx.change || 0,
+          paymentMethod: trx.payment_method || 'cash',
+          storeName: displayedStoreName,
+          storeAddress: displayedAddress,
+          storePhone: displayedPhone,
+          footerMessage: showFooter ? (trx?.outlets?.footer_message || localStorage.getItem('footerMessage') || '') : '',
+          footerMessage2: showFooter ? (trx?.outlets?.footer_message2 || localStorage.getItem('footerMessage2') || '') : '',
+          footerMessage3: showFooter ? (trx?.outlets?.footer_message3 || localStorage.getItem('footerMessage3') || '') : '',
+        };
+
+        console.log('[Tauri] Printing receipt via Tauri...', printData);
+        const result = await printTauriReceipt(printData);
+        if (!result.success) {
+          void showPrinterNotConnectedNotification(result.message);
+        } else {
+          void showPrintSuccessNotification(total, formatInvoiceNumber(trx.id));
+        }
+      } catch (error) {
+        console.error('[Tauri] Print error:', error);
+        void showPrinterNotConnectedNotification(
+          error instanceof Error ? error.message : 'Terjadi kesalahan saat mencetak struk.'
+        );
+      } finally {
+        setIsPrinting(false);
+      }
+      return;
+    }
+
+    // ── Android / Mobile: alur Bluetooth lama ──
     if (!isBluetoothAvailable()) {
       console.error('Bluetooth plugin not available');
       void showPrinterNotConnectedNotification('Plugin Bluetooth tidak tersedia di perangkat ini.');

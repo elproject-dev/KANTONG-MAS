@@ -348,35 +348,32 @@ export function formatReceipt(transaction: any): string {
     receipt += formatLine('Diskon', formatPrice(discount), PAPER_WIDTH) + '\n';
   }
 
-
-
-  receipt += ESC_POS.BOLD_ON;
-  receipt += formatLine('TOTAL', formatPrice(total), PAPER_WIDTH) + '\n';
-  receipt += ESC_POS.BOLD_OFF;
-  receipt += `\n`;
-
-  // Info pembayaran
+  // Info pembayaran variables
   const status = paymentStatus || payment_status;
   const balance = remainingBalance ?? remaining_balance ?? 0;
   const activeDueDate = due_date || dueDate;
+
+  if (status === 'partial') {
+    receipt += formatLine('Cicilan', formatPrice(amountPaid), PAPER_WIDTH) + '\n';
+  }
+
+  const finalGrandTotal = status === 'partial' ? balance : total;
+
+  receipt += ESC_POS.BOLD_ON;
+  receipt += formatLine('GRAND TOTAL', formatPrice(finalGrandTotal), PAPER_WIDTH) + '\n';
+  receipt += ESC_POS.BOLD_OFF;
+  receipt += `\n`;
 
   let tipePembayaran = 'Lunas';
   if (status === 'partial') {
     tipePembayaran = 'Cicilan';
   } else if (status === 'unpaid') {
-    tipePembayaran = 'Tempo';
+    tipePembayaran = 'Tempo Penuh';
   }
 
   receipt += formatLine('Tipe Pembayaran', tipePembayaran, PAPER_WIDTH) + '\n';
 
-  if (status === 'partial') {
-    receipt += formatLine('Cicilan', formatPrice(amountPaid), PAPER_WIDTH) + '\n';
-    receipt += formatLine('Kekurangan Pembayaran', formatPrice(balance), PAPER_WIDTH) + '\n';
-    if (activeDueDate) {
-      receipt += formatLine('Jatuh Tempo', formatReceiptSimpleDate(activeDueDate), PAPER_WIDTH) + '\n';
-    }
-  } else if (status === 'unpaid') {
-    receipt += formatLine('Kekurangan Pembayaran', formatPrice(balance), PAPER_WIDTH) + '\n';
+  if (status === 'partial' || status === 'unpaid') {
     if (activeDueDate) {
       receipt += formatLine('Jatuh Tempo', formatReceiptSimpleDate(activeDueDate), PAPER_WIDTH) + '\n';
     }
