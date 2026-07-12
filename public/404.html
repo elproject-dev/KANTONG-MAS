@@ -7,7 +7,7 @@
   <script type="text/javascript">
     var path = window.location.pathname;
     var repo = '/KANTONG-MAS/';
-    var isGithubPages = path.indexOf(repo) === 0;
+    var isGithubPages = path.toLowerCase().indexOf(repo.toLowerCase()) === 0;
     var redirectUrl = window.location.origin + (isGithubPages ? repo : '/');
 
     sessionStorage.redirect = window.location.href;
