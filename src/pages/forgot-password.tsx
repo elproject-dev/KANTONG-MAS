@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
 
       const redirectUrl = (Capacitor.isNativePlatform() || isTauri)
         ? `https://elproject-dev.github.io/KANTONG-MAS/update-password`
-        : `${window.location.origin}/update-password`;
+        : new URL("update-password", window.location.origin + import.meta.env.BASE_URL).href;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
