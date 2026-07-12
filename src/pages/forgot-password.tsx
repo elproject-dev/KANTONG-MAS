@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
       const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
       const redirectUrl = (Capacitor.isNativePlatform() || isTauri)
-        ? `https://elproject-dev.github.io/CV.AULIA-USAHA/update-password` // Ganti ini dengan URL web production Anda jika sudah berubah
+        ? `https://elproject-dev.github.io/KANTONG-MAS/update-password`
         : `${window.location.origin}/update-password`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

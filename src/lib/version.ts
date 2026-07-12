@@ -1,7 +1,7 @@
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.3';
 
 export const RELEASE_CHANGELOG = [
-  "update build"
+  "pembaruan Reset Password"
 ];
 
 export interface UpdateInfo {
