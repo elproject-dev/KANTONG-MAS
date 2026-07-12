@@ -418,8 +418,8 @@ export default function SuppliersPage() {
     }
 
     const storeName = localStorage.getItem('storeName') || 'KANTONG-MAS';
-    const storeAddress = localStorage.getItem('storeAddress') || '';
-    const storePhone = localStorage.getItem('storePhone') || '';
+    const storeAddress = localStorage.getItem('storeAddress') || 'Jl. Condongcatur No.123 Yk';
+    const storePhone = localStorage.getItem('storePhone') || '081234567890';
     const bankName = localStorage.getItem('storeBankName') || 'BCA';
     const bankAccount = localStorage.getItem('storeBankAccount') || '4451377137';
     const bankAccountName = localStorage.getItem('storeBankAccountName') || 'AULIA USAHA';
@@ -439,11 +439,11 @@ export default function SuppliersPage() {
       const subtotal = qty * unitPrice;
       return `
         <tr>
-          <td style="text-align: center; color: #64748b;">${index + 1}</td>
-          <td style="font-weight: 600; color: #0f172a;">${productName}</td>
-          <td style="text-align: center; font-weight: 600; color: #0f172a;">${qty}</td>
-          <td style="text-align: right; color: #475569;">${fmtRp(unitPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #0f172a;">${fmtRp(subtotal)}</td>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${productName}</td>
+          <td style="text-align: center;">${qty}</td>
+          <td style="text-align: right;">${fmtRp(unitPrice)}</td>
+          <td style="text-align: right;">${fmtRp(subtotal)}</td>
         </tr>`;
     }).join('') || '';
 
@@ -452,7 +452,7 @@ export default function SuppliersPage() {
       for (let i = itemsCount; i < 8; i++) {
         itemsHtml += `
           <tr class="empty-row">
-            <td style="text-align: center; color: #cbd5e1;">${i + 1}</td>
+            <td style="text-align: center;">${i + 1}</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
@@ -481,7 +481,7 @@ export default function SuppliersPage() {
     const statusLabel = isReturn ? (returnData?.status === 'Diproses' ? 'PENGAJUAN' : (returnData?.status?.toUpperCase() || 'RETUR')) : (trx.status === 'Lunas' || trx.status === 'Selesai' ? (trx.originalStatus ? trx.originalStatus.toUpperCase() : 'LUNAS') : (trx.status === 'Cicilan' ? 'CICILAN' : 'TEMPO PENUH'));
     const statusBadgeClass = isReturn ? 'badge-completed' : (trx.status === 'Lunas' || trx.status === 'Selesai' ? 'badge-completed' : 'badge-pending');
 
-    const getInvoiceContentHtml = (copyLabel: string) => {
+    const getInvoiceContentHtml = () => {
       return `
         <div class="invoice-copy">
           <div>
@@ -491,7 +491,7 @@ export default function SuppliersPage() {
                   <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
                     <tr>
                       <td style="vertical-align: middle; padding-right: 12px; border: none;">
-                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: -3px;" onerror="this.style.display='none'" />
+                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: 2px;" onerror="this.style.display='none'" />
                       </td>
                       <td style="vertical-align: middle; border: none; padding: 0; text-align: left;">
                         <div class="company-name">${storeName}</div>
@@ -503,8 +503,7 @@ export default function SuppliersPage() {
                 </td>
                 <td style="width: 40%; text-align: right; vertical-align: top;">
                   <h1 class="invoice-title">${isReturn ? 'FAKTUR RETUR' : (activeTab === 'tagihan' ? 'FAKTUR PEMBAYARAN' : 'FAKTUR PEMBELIAN')}</h1>
-                  <div style="font-size: 10px; font-weight: 700; color: #475569; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
-                    <span class="invoice-copy-badge">${copyLabel}</span>
+                  <div style="font-size: 12px; font-weight: 700; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
                     <span class="invoice-status-badge ${statusBadgeClass}">${statusLabel}</span>
                   </div>
                 </td>
@@ -516,16 +515,11 @@ export default function SuppliersPage() {
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
               <tr>
                 <td style="width: 70%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Suplier</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
                       <td style="padding: 2px 0; font-weight: 600; color: #0f172a;">${trx.supplierName || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Metode Bayar</td>
-                      <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
-                      <td style="padding: 2px 0;">${trx.paymentMethod || '-'}</td>
                     </tr>
                     ${trx.status !== 'Lunas' && trx.dueDate ? `<tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Jatuh Tempo</td>
@@ -536,7 +530,7 @@ export default function SuppliersPage() {
                 </td>
                 <td style="width: 2%;"></td>
                 <td style="width: 28%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">No. Faktur</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -575,7 +569,7 @@ export default function SuppliersPage() {
             <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
               <tr>
                 <td style="width: 55%; vertical-align: top;">
-                  <div style="font-size: 12px; line-height: 1.6; color: #0f172a;">
+                  <div style="font-size: 14.4px; line-height: 1.6; color: #0f172a;">
                     ${isReturn ? `
                       Alasan Retur : <strong>${returnData?.reason || '-'}</strong><br>
                       Status : <strong>${returnData?.status === 'Diproses' ? 'Pengajuan' : (returnData?.status || '-')}</strong>
@@ -583,45 +577,44 @@ export default function SuppliersPage() {
                       Pengajuan : <strong>Pelunasan</strong><br>
                       Status : <strong>${trx.status}</strong>
                     ` : `
-                      Metode Pembayaran : <strong>${trx.paymentMethod || '-'}</strong><br>
                       Status : <strong>${trx.status}</strong>
                     `)}
                   </div>
                 </td>
                 <td style="width: 45%; vertical-align: top; text-align: right;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; line-height: 1.4; float: right;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11.4px; line-height: 1.4; float: right;">
                     ${(!isReturn && trx.tax && trx.tax > 0) ? `
                     <tr>
-                      <td style="color: #475569; font-weight: 500; text-align: left;">PPN/Pajak</td>
-                      <td style="text-align: right; color: #0f172a; font-weight: 600;">${fmtRp(trx.tax)}</td>
+                      <td style="color: #475569; font-weight: 500; text-align: left; padding: 2px 0;">PPN/Pajak</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 600; padding: 2px 0;">${fmtRp(trx.tax)}</td>
                     </tr>` : ''}
                     ${(!isReturn && trx.discount && trx.discount > 0) ? `
                     <tr>
-                      <td style="color: #ea580c; font-weight: 500; text-align: left;">Diskon</td>
-                      <td style="text-align: right; color: #ea580c; font-weight: 600;">-${fmtRp(trx.discount)}</td>
+                      <td style="color: #ea580c; font-weight: 500; text-align: left; padding: 2px 0;">Diskon</td>
+                      <td style="text-align: right; color: #ea580c; font-weight: 600; padding: 2px 0;">-${fmtRp(trx.discount)}</td>
                     </tr>` : ''}
                     <tr>
-                      <td style="color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 13px;">${isReturn ? 'TOTAL REFUND' : 'TOTAL'}</td>
-                      <td style="text-align: right; color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 13px;">
+                      <td style="color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 15.6px;">${isReturn ? 'TOTAL REFUND' : 'TOTAL'}</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 15.6px;">
                         ${fmtRp(finalTotal)}
                       </td>
                     </tr>
                     ${(!isReturn && (trx.status === 'Selesai' || trx.status === 'Lunas')) ? `
                     <tr>
-                      <td style="color: #475569; font-weight: 500; text-align: left;">Sudah Dibayarkan</td>
-                      <td style="text-align: right; color: #0f172a; font-weight: 600;">${fmtRp(trx.previousDownPayment || (trx.totalAmount - (trx.lastPaymentAmount || trx.totalAmount)))}</td>
+                      <td style="color: #475569; font-weight: 500; text-align: left; padding: 2px 0;">Sudah Dibayarkan</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 600; padding: 2px 0;">${fmtRp(trx.previousDownPayment || (trx.totalAmount - (trx.lastPaymentAmount || trx.totalAmount)))}</td>
                     </tr>
                     <tr>
-                      <td style="color: #10b981; font-weight: 700; text-align: left;">Pembayaran Saat Ini</td>
-                      <td style="text-align: right; color: #10b981; font-weight: 800;">${fmtRp(trx.lastPaymentAmount || trx.totalAmount)}</td>
+                      <td style="color: #10b981; font-weight: 700; text-align: left; padding: 2px 0;">Pembayaran Saat Ini</td>
+                      <td style="text-align: right; color: #10b981; font-weight: 800; padding: 2px 0;">${fmtRp(trx.lastPaymentAmount || trx.totalAmount)}</td>
                     </tr>` : (!isReturn ? `
                     <tr>
-                      <td style="color: #475569; font-weight: 500; text-align: left;">Total Dibayar</td>
-                      <td style="text-align: right; color: #0f172a; font-weight: 600;">${fmtRp(trx.status === 'Tempo Penuh' ? 0 : (trx.downPayment || 0))}</td>
+                      <td style="color: #475569; font-weight: 500; text-align: left; padding: 2px 0;">Total Dibayar</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 600; padding: 2px 0;">${fmtRp(trx.status === 'Tempo Penuh' ? 0 : (trx.downPayment || 0))}</td>
                     </tr>
                     <tr>
-                      <td style="color: #ea580c; font-weight: 700; text-align: left;">${activeTab === 'tagihan' ? 'Kekurangan Pembayaran' : 'Sisa Tagihan'}</td>
-                      <td style="text-align: right; color: #ea580c; font-weight: 800;">${fmtRp(Math.max(0, trx.totalAmount - (trx.status === 'Tempo Penuh' ? 0 : (trx.downPayment || 0))))}</td>
+                      <td style="color: #ea580c; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 15.6px;">${activeTab === 'tagihan' ? 'Kekurangan Pembayaran' : 'Sisa Tagihan'}</td>
+                      <td style="text-align: right; color: #ea580c; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 15.6px;">${fmtRp(Math.max(0, trx.totalAmount - (trx.status === 'Tempo Penuh' ? 0 : (trx.downPayment || 0))))}</td>
                     </tr>` : '')}
                   </table>
                 </td>
@@ -632,14 +625,14 @@ export default function SuppliersPage() {
           <div>
             <table style="width: 100%; margin-top: 12px; border-collapse: collapse;">
               <tr>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Penerima,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
                     ( _________________ )
                   </div>
                 </td>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Hormat Kami,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
@@ -649,9 +642,17 @@ export default function SuppliersPage() {
               </tr>
             </table>
             
-            <div style="text-align: left; font-size: 8px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
+            <div style="text-align: left; font-size: 9.6px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
               Pembayaran Transfer melalui Bank: <strong>${bankName} ${bankAccount}</strong> a/n <strong>${bankAccountName}</strong>
             </div>
+            <div class="footer-divider"></div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="text-align: center; font-size: 10.2px; color: #64748b;">
+                  ${footerMessage || 'Terima Kasih Sudah Melakukan Order'}
+                </td>
+              </tr>
+            </table>
           </div>
         </div>
       `;
@@ -662,78 +663,55 @@ export default function SuppliersPage() {
       <html>
       <head>
         <title>${isReturn ? 'Faktur Retur' : (activeTab === 'tagihan' ? 'Faktur Pembayaran' : 'Faktur Pembelian')} - ${trx.id}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+          @font-face {
+            font-family: 'GoogleSansFlex';
+            src: url('${import.meta.env.BASE_URL}GoogleSansFlex_9pt-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
           @page {
-            size: A4 portrait;
+            size: auto;
             margin: 0mm;
           }
           @media print {
-            body { margin: 0; padding: 8mm 10mm; }
+            body { margin: 0; padding: 5mm 8mm; }
             .no-print { display: none !important; }
-            .invoice-copy { border: 1px solid transparent !important; }
+            .invoice-copy { border: none !important; }
           }
           * {
             box-sizing: border-box;
-            font-weight: 800 !important;
             color: #000000 !important;
+            font-family: 'GoogleSansFlex', Arial, Helvetica, sans-serif !important;
+            font-weight: bold !important;
           }
           body {
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 13.2px;
+            font-weight: 600;
             line-height: 1.35;
             margin: 0;
-            padding: 8mm 10mm;
-            color: #000000;
+            padding: 5mm 8mm;
             background-color: #ffffff;
           }
           .print-wrapper {
             display: flex;
             flex-direction: column;
-            height: 275mm;
-            justify-content: space-between;
           }
           .invoice-copy {
-            height: 133mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow: visible;
-            border: 1px dashed #cbd5e1;
-            padding: 10px;
-            border-radius: 6px;
+            overflow: hidden;
+            border: none;
+            padding: 0;
             background-color: #ffffff;
-          }
-          .cut-divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 8px;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            margin: 1mm 0;
-            border-top: 1px dashed #cbd5e1;
-            position: relative;
-            height: 1px;
-          }
-          .cut-divider span {
-            background: #ffffff;
-            padding: 0 10px;
-            position: absolute;
-            top: -6px;
-            text-transform: uppercase;
           }
           .info-table {
             width: 100%;
             border-collapse: collapse;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 15.6px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -742,31 +720,19 @@ export default function SuppliersPage() {
           }
           .company-address, .company-contact {
             margin: 0;
-            font-size: 8.5px;
+            font-size: 10.2px;
             color: #475569;
           }
           .invoice-title {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
             letter-spacing: 0.02em;
           }
-          .invoice-copy-badge {
-            display: inline-block;
-            font-size: 7.5px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            padding: 1px 5px;
-            border-radius: 3px;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            text-transform: uppercase;
-          }
           .invoice-status-badge {
             display: inline-block;
-            font-size: 7.5px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.05em;
             padding: 1px 5px;
@@ -779,6 +745,11 @@ export default function SuppliersPage() {
             border: 1px solid #bbf7d0;
           }
           .badge-pending {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+          }
+          .badge-partial {
             background-color: #fef9c3;
             color: #854d0e;
             border: 1px solid #fef08a;
@@ -794,24 +765,22 @@ export default function SuppliersPage() {
             margin-bottom: 8px;
           }
           .items-table th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-size: 8.5px;
-            font-weight: 700;
+            color: #000000 !important;
+            font-size: 12px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             padding: 4px 6px;
-            border-bottom: 1.5px solid #0f172a;
-            border-top: 1px solid #e2e8f0;
+            border-bottom: 1.5px solid #000000;
+            border-top: 1.5px solid #000000;
           }
           .items-table td {
             padding: 4px 6px;
-            font-size: 10px;
-            border-bottom: 1px dashed #e2e8f0;
-            color: #0f172a;
+            font-size: 13.2px;
+            border-bottom: none;
+            color: #000000 !important;
           }
           .items-table tr:last-child td {
-            border-bottom: 1px solid #0f172a;
+            border-bottom: 1.5px solid #000000;
           }
           .items-table tr.empty-row td {
             height: 15px;
@@ -826,13 +795,7 @@ export default function SuppliersPage() {
       </head>
       <body>
         <div class="print-wrapper">
-          ${getInvoiceContentHtml('SALINAN SUPLIER')}
-          
-          <div class="cut-divider">
-            <span>Gunting di sini untuk memotong dokumen</span>
-          </div>
-          
-          ${getInvoiceContentHtml('SALINAN TOKO')}
+          ${getInvoiceContentHtml()}
         </div>
 
         <script>

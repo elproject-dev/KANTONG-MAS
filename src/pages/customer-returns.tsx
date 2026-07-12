@@ -74,7 +74,7 @@ export default function CustomerReturnsPage() {
   const [storeInfo, setStoreInfo] = useState(() => ({
     name: localStorage.getItem('storeName') || 'KANTONG-MAS',
     address: localStorage.getItem('storeAddress') || 'Jl. Condongcatur No.123 Yk',
-    phone: localStorage.getItem('storePhone') || '',
+    phone: localStorage.getItem('storePhone') || '081234567890',
     footer: localStorage.getItem('footerMessage') || 'Terima Kasih Sudah Melakukan Order',
     bankName: localStorage.getItem('storeBankName') || 'BCA',
     bankAccount: localStorage.getItem('storeBankAccount') || '4451377137',
@@ -86,7 +86,7 @@ export default function CustomerReturnsPage() {
       setStoreInfo({
         name: localStorage.getItem('storeName') || 'KANTONG-MAS',
         address: localStorage.getItem('storeAddress') || 'Jl. Condongcatur No.123 Yk',
-        phone: localStorage.getItem('storePhone') || '',
+        phone: localStorage.getItem('storePhone') || '081234567890',
         footer: localStorage.getItem('footerMessage') || 'Terima Kasih Sudah Melakukan Order',
         bankName: localStorage.getItem('storeBankName') || 'BCA',
         bankAccount: localStorage.getItem('storeBankAccount') || '4451377137',
@@ -126,8 +126,8 @@ export default function CustomerReturnsPage() {
     }
 
     const storeName = storeInfo?.name || "CV AULIA USAHA";
-    const storeAddress = storeInfo?.address || "";
-    const storePhone = storeInfo?.phone || "";
+    const storeAddress = storeInfo?.address || "Jl. Condongcatur No.123 Yk";
+    const storePhone = storeInfo?.phone || "081234567890";
 
     let itemsHtml = returnData.sales_return_items?.map((item: any, index: number) => {
       const productName = item.product_name || 'Unknown';
@@ -137,11 +137,11 @@ export default function CustomerReturnsPage() {
       const subtotal = item.subtotal || 0;
       return `
         <tr>
-          <td style="text-align: center; color: #64748b;">${index + 1}</td>
-          <td style="font-weight: 600; color: #0f172a;">${productName}</td>
-          <td style="text-align: center; font-weight: 600; color: #0f172a;">${quantity} ${unit}</td>
-          <td style="text-align: right; color: #475569;">${formatRupiah(refundPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #0f172a;">${formatRupiah(subtotal)}</td>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${productName}</td>
+          <td style="text-align: center;">${quantity} ${unit}</td>
+          <td style="text-align: right;">${formatRupiah(refundPrice)}</td>
+          <td style="text-align: right;">${formatRupiah(subtotal)}</td>
         </tr>`;
     }).join('') || '';
 
@@ -151,7 +151,7 @@ export default function CustomerReturnsPage() {
       for (let i = itemsCount; i < 8; i++) {
         itemsHtml += `
           <tr class="empty-row">
-            <td style="text-align: center; color: #cbd5e1;">${i + 1}</td>
+            <td style="text-align: center;">${i + 1}</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
@@ -176,7 +176,7 @@ export default function CustomerReturnsPage() {
       returnDate = `${dateStr} ,${timeStr}`;
     }
 
-    const getInvoiceContentHtml = (copyLabel: string) => {
+    const getInvoiceContentHtml = () => {
       return `
         <div class="invoice-copy">
           <div>
@@ -186,7 +186,7 @@ export default function CustomerReturnsPage() {
                   <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
                     <tr>
                       <td style="vertical-align: middle; padding-right: 12px; border: none;">
-                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: -3px;" onerror="this.style.display='none'" />
+                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: 2px;" onerror="this.style.display='none'" />
                       </td>
                       <td style="vertical-align: middle; border: none; padding: 0; text-align: left;">
                         <div class="company-name">${storeName}</div>
@@ -198,8 +198,7 @@ export default function CustomerReturnsPage() {
                 </td>
                 <td style="width: 40%; text-align: right; vertical-align: top;">
                   <h1 class="invoice-title">FAKTUR RETUR PENJUALAN</h1>
-                  <div style="font-size: 10px; font-weight: 700; color: #475569; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
-                    <span class="invoice-copy-badge">${copyLabel}</span>
+                  <div style="font-size: 12px; font-weight: 700; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
                     <span class="invoice-status-badge ${returnData.status === 'completed' ? 'badge-completed' : 'badge-pending'}">${returnData.status === 'completed' ? 'SELESAI' : 'PENDING'}</span>
                   </div>
                 </td>
@@ -211,7 +210,7 @@ export default function CustomerReturnsPage() {
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
               <tr>
                 <td style="width: 70%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Kepada Yth.</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -225,7 +224,7 @@ export default function CustomerReturnsPage() {
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Alamat</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
-                      <td style="padding: 2px 0; font-size: 9.5px; line-height: 1.2;">
+                      <td style="padding: 2px 0; font-size: 11.4px; line-height: 1.2;">
                         ${returnData.customers?.address || returnData.customer_address || '-'}
                         ${returnData.customers?.district || returnData.customer_district ? `, ${returnData.customers?.district || returnData.customer_district}` : ''}
                         ${returnData.customers?.city || returnData.customer_city ? `, ${returnData.customers?.city || returnData.customer_city}` : ''}
@@ -235,7 +234,7 @@ export default function CustomerReturnsPage() {
                 </td>
                 <td style="width: 2%;"></td> <!-- Spacer -->
                 <td style="width: 28%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">No. Invoice</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -282,9 +281,9 @@ export default function CustomerReturnsPage() {
                 <td style="width: 45%; vertical-align: top; text-align: right;">
                   <table style="width: 85%; border-collapse: collapse; float: right;">
                     <tr>
-                      <td style="padding: 6px 10px; border: 2px solid #0f172a; background-color: #f8fafc; text-align: center; border-radius: 4px;">
-                        <div style="font-size: 8px; font-weight: 800; color: #475569; letter-spacing: 0.5px; text-transform: uppercase;">TOTAL REFUND</div>
-                        <div style="font-size: 14px; font-weight: 800; color: #ea580c; margin-top: 2px;">${formatRupiah(returnData.total_refund || 0)}</div>
+                      <td style="padding: 6px 10px; border: 2px solid #000000; text-align: center;">
+                        <div style="font-size: 11.4px; font-weight: 800; color: #475569; letter-spacing: 0.5px; text-transform: uppercase;">TOTAL REFUND</div>
+                        <div style="font-size: 16.8px; font-weight: 800; color: #ea580c; margin-top: 2px;">${formatRupiah(returnData.total_refund || 0)}</div>
                       </td>
                     </tr>
                   </table>
@@ -296,14 +295,14 @@ export default function CustomerReturnsPage() {
           <div>
             <table style="width: 100%; margin-top: 12px; border-collapse: collapse;">
               <tr>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Penerima,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
                     ( _________________ )
                   </div>
                 </td>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Hormat Kami,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
@@ -313,14 +312,14 @@ export default function CustomerReturnsPage() {
               </tr>
             </table>
             
-            <div style="text-align: left; font-size: 8px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
+            <div style="text-align: left; font-size: 9.6px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
               Pembayaran Transfer melalui Bank: <strong>${storeInfo?.bankName || 'BCA'} ${storeInfo?.bankAccount || '4451377137'}</strong> a/n <strong>${storeInfo?.bankAccountName || 'AULIA USAHA'}</strong>
             </div>
 
             <div class="footer-divider"></div>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="text-align: center; font-size: 8.5px; color: #64748b;">
+                <td style="text-align: center; font-size: 10.2px; color: #64748b;">
                   ${storeInfo?.footer || 'Terima Kasih Sudah Melakukan Order'}
                 </td>
               </tr>
@@ -335,75 +334,55 @@ export default function CustomerReturnsPage() {
       <html>
       <head>
         <title>Faktur Retur - ${returnData.return_number || ''}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+          @font-face {
+            font-family: 'GoogleSansFlex';
+            src: url('${import.meta.env.BASE_URL}GoogleSansFlex_9pt-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
           @page {
-            size: A4 portrait;
+            size: auto;
             margin: 0mm;
           }
           @media print {
-            body { margin: 0; padding: 8mm 10mm; }
+            body { margin: 0; padding: 5mm 8mm; }
             .no-print { display: none !important; }
-            .invoice-copy { border: 1px solid transparent !important; }
+            .invoice-copy { border: none !important; }
           }
           * {
             box-sizing: border-box;
+            color: #000000 !important;
+            font-family: 'GoogleSansFlex', Arial, Helvetica, sans-serif !important;
+            font-weight: bold !important;
           }
           body {
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            font-size: 10px;
+            font-size: 13.2px;
+            font-weight: 600;
             line-height: 1.35;
             margin: 0;
-            padding: 8mm 10mm;
-            color: #1e293b;
+            padding: 5mm 8mm;
             background-color: #ffffff;
           }
           .print-wrapper {
             display: flex;
             flex-direction: column;
-            height: 270mm;
-            justify-content: space-between;
           }
           .invoice-copy {
-            height: 129mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            border: 1px dashed #cbd5e1;
-            padding: 10px;
-            border-radius: 6px;
+            border: none;
+            padding: 0;
             background-color: #ffffff;
-          }
-          .cut-divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 8px;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            margin: 1mm 0;
-            border-top: 1px dashed #cbd5e1;
-            position: relative;
-            height: 1px;
-          }
-          .cut-divider span {
-            background: #ffffff;
-            padding: 0 10px;
-            position: absolute;
-            top: -6px;
-            text-transform: uppercase;
           }
           .info-table {
             width: 100%;
             border-collapse: collapse;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 15.6px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -412,31 +391,19 @@ export default function CustomerReturnsPage() {
           }
           .company-address, .company-contact {
             margin: 0;
-            font-size: 8.5px;
+            font-size: 10.2px;
             color: #475569;
           }
           .invoice-title {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
             letter-spacing: 0.02em;
           }
-          .invoice-copy-badge {
-            display: inline-block;
-            font-size: 7.5px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            padding: 1px 5px;
-            border-radius: 3px;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            text-transform: uppercase;
-          }
           .invoice-status-badge {
             display: inline-block;
-            font-size: 7.5px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.05em;
             padding: 1px 5px;
@@ -458,62 +425,38 @@ export default function CustomerReturnsPage() {
             border-top: 2px double #0f172a;
             margin: 4px 0 6px 0;
           }
-          .metadata-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8px;
-          }
-          .metadata-table td {
-            padding: 2px 0;
-            vertical-align: top;
-            font-size: 10px;
-          }
-          .metadata-table td:first-child, .metadata-table td:nth-child(4) {
-            color: #475569;
-            font-weight: 500;
-          }
           .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 8px;
           }
           .items-table th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-size: 8.5px;
-            font-weight: 700;
+            color: #000000 !important;
+            font-size: 12px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             padding: 4px 6px;
-            border-bottom: 1.5px solid #0f172a;
-            border-top: 1px solid #e2e8f0;
+            border-bottom: 1.5px solid #000000;
+            border-top: 1.5px solid #000000;
           }
           .items-table td {
             padding: 4px 6px;
-            font-size: 10px;
-            border-bottom: 1px dashed #e2e8f0;
-            color: #0f172a;
+            font-size: 13.2px;
+            border-bottom: none;
+            color: #000000 !important;
           }
           .items-table tr:last-child td {
-            border-bottom: 1px solid #0f172a;
+            border-bottom: 1.5px solid #000000;
           }
           .items-table tr.empty-row td {
             height: 15px;
             padding: 2px 6px;
           }
-
-          .text-center {
-            text-align: center;
-          }
-          .text-right {
-            text-align: right;
-          }
           .reason-section {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 6px 10px;
-            font-size: 9.5px;
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            font-size: 11.4px;
             line-height: 1.35;
           }
           .footer-divider {
@@ -521,55 +464,11 @@ export default function CustomerReturnsPage() {
             border-top: 1px solid #cbd5e1;
             margin: 6px 0 4px 0;
           }
-          .no-print {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 20px;
-            padding-top: 12px;
-            border-top: 1px dashed #e2e8f0;
-            page-break-inside: avoid;
-          }
-          .btn {
-            padding: 8px 20px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: inherit;
-            text-decoration: none;
-          }
-          .btn-primary {
-            background-color: #0f172a;
-            color: white;
-          }
-          .btn-primary:hover {
-            background-color: #1e293b;
-          }
-          .btn-secondary {
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-          }
-          .btn-secondary:hover {
-            background-color: #e2e8f0;
-          }
         </style>
       </head>
       <body>
         <div class="print-wrapper">
-          ${getInvoiceContentHtml('SALINAN PELANGGAN')}
-          
-          <div class="cut-divider">
-            <span>Gunting di sini untuk memotong dokumen</span>
-          </div>
-          
-          ${getInvoiceContentHtml('SALINAN TOKO')}
+          ${getInvoiceContentHtml()}
         </div>
 
         <script>

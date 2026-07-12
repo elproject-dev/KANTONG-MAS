@@ -22,6 +22,18 @@ import { Share } from "@capacitor/share";
 import { Capacitor } from "@capacitor/core";
 import { isTauri, tauriSaveFile } from "@/lib/tauri-file";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  connectToPrinter,
+  disconnectPrinter,
+  printReceipt,
+  getBluetoothPrinterMac,
+  isBluetoothAvailable
+} from "@/lib/bluetooth-printer";
+import { isTauriDesktop, printTauriReceipt, isTauriPrinterReady } from "@/lib/tauri-bluetooth-printer";
+import {
+  showPrinterNotConnectedNotification,
+  showPrintSuccessNotification
+} from "@/lib/android-notifications";
 
 const isDateOverdue = (dueDateStr: string | null | undefined) => {
   if (!dueDateStr) return false;
@@ -64,13 +76,144 @@ export default function ReceivablesPage() {
     bankAccount: localStorage.getItem('storeBankAccount') || '4451377137',
     bankAccountName: localStorage.getItem('storeBankAccountName') || 'AULIA USAHA'
   }));
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handlePrintReceipt = async (trx: any) => {
+    if (!trx) return;
+
+    if (isTauriDesktop()) {
+      if (!isTauriPrinterReady()) {
+        void showPrinterNotConnectedNotification('Printer Desktop belum dipilih. Buka Pengaturan → Printer Desktop (Tauri) untuk memilih printer.');
+        return;
+      }
+      setIsPrinting(true);
+      try {
+        const receiptCustomerName = trx.customers?.name || trx.customer?.name || trx.customer_name || "Umum";
+        const items = trx.transaction_items?.map((item: any) => ({
+          productId: item.product_id,
+          productName: item.product_name,
+          quantity: item.quantity,
+          price: item.price
+        })) || [];
+        const total = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0);
+
+        const printData = {
+          ...trx,
+          cashierName: trx.cashier_name,
+          items,
+          tax: trx.tax || 0,
+          ppnPercentage: 11,
+          discount: trx.discount || 0,
+          discountNote: trx.discount_note || '',
+          customerName: receiptCustomerName,
+          total: total,
+          amountPaid: trx.amount_paid || 0,
+          change: trx.change || 0,
+          paymentMethod: trx.payment_method || 'cash',
+          storeName: storeInfo?.name,
+          storeAddress: storeInfo?.address || 'Jl. Condongcatur No.123 Yk',
+          storePhone: storeInfo?.phone || '081234567890',
+          footerMessage: storeInfo?.footer || '',
+          footerMessage2: '',
+          footerMessage3: '',
+        };
+
+        const result = await printTauriReceipt(printData);
+        if (!result.success) {
+          void showPrinterNotConnectedNotification(result.message);
+        } else {
+          void showPrintSuccessNotification(total, formatInvoiceNumber(trx.id));
+        }
+      } catch (error) {
+        void showPrinterNotConnectedNotification(
+          error instanceof Error ? error.message : 'Terjadi kesalahan saat mencetak struk.'
+        );
+      } finally {
+        setIsPrinting(false);
+      }
+      return;
+    }
+
+    if (!isBluetoothAvailable()) {
+      void showPrinterNotConnectedNotification('Plugin Bluetooth tidak tersedia di perangkat ini.');
+      return;
+    }
+
+    const printerMac = getBluetoothPrinterMac();
+    if (!printerMac) {
+      void showPrinterNotConnectedNotification('Alamat MAC printer belum diatur di pengaturan.');
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      const receiptCustomerName = trx.customers?.name || trx.customer?.name || trx.customer_name || "Umum";
+
+      const items = trx.transaction_items?.map((item: any) => ({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: item.quantity,
+        price: item.price
+      })) || [];
+
+      const total = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0);
+
+      const printData = {
+        ...trx,
+        cashierName: trx.cashier_name,
+        items,
+        tax: trx.tax || 0,
+        ppnPercentage: 11,
+        discount: trx.discount || 0,
+        discountNote: trx.discount_note || '',
+        customerName: receiptCustomerName,
+        total: total,
+        amountPaid: trx.amount_paid || 0,
+        change: trx.change || 0,
+        paymentMethod: trx.payment_method || 'cash',
+        storeName: storeInfo?.name,
+        storeAddress: storeInfo?.address,
+        storePhone: storeInfo?.phone,
+        footerMessage: storeInfo?.footer || '',
+        footerMessage2: '',
+        footerMessage3: '',
+      };
+
+      const connectionResult = await connectToPrinter(printerMac);
+      if (!connectionResult.success) {
+        void showPrinterNotConnectedNotification(connectionResult.message);
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const printed = await printReceipt(printData);
+
+      if (!printed) {
+        void showPrinterNotConnectedNotification('Gagal mencetak struk. Pastikan printer menyala dan terhubung.');
+      } else {
+        void showPrintSuccessNotification(total, formatInvoiceNumber(trx.id));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await disconnectPrinter();
+    } catch (error) {
+      void showPrinterNotConnectedNotification(
+        error instanceof Error ? error.message : 'Terjadi kesalahan saat mencetak struk.'
+      );
+      try {
+        await disconnectPrinter();
+      } catch (e) { }
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   useEffect(() => {
     const syncStoreInfo = () => {
       setStoreInfo({
         name: localStorage.getItem('storeName') || 'KANTONG-MAS',
         address: localStorage.getItem('storeAddress') || 'Jl. Condongcatur No.123 Yk',
-        phone: localStorage.getItem('storePhone') || '',
+        phone: localStorage.getItem('storePhone') || '081234567890',
         footer: localStorage.getItem('footerMessage') || 'Terima Kasih Sudah Melakukan Order',
         bankName: localStorage.getItem('storeBankName') || 'BCA',
         bankAccount: localStorage.getItem('storeBankAccount') || '4451377137',
@@ -110,8 +253,8 @@ export default function ReceivablesPage() {
     }
 
     const storeName = storeInfo?.name || "CV AULIA USAHA";
-    const storeAddress = storeInfo?.address || "";
-    const storePhone = storeInfo?.phone || "";
+    const storeAddress = storeInfo?.address || 'Jl. Condongcatur No.123 Yk';
+    const storePhone = storeInfo?.phone || '081234567890';
 
     const totalTransaction = (trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0);
     const totalPaid = totalTransaction - (trx.remaining_balance || 0);
@@ -166,7 +309,7 @@ export default function ReceivablesPage() {
       trxDate = `${dateStr} ,${timeStr}`;
     }
 
-    const getInvoiceContentHtml = (copyLabel: string) => {
+    const getInvoiceContentHtml = () => {
       let statusLabel = 'TEMPO PENUH';
       let badgeClass = 'badge-pending';
       if (trx.payment_status === 'paid') {
@@ -186,7 +329,7 @@ export default function ReceivablesPage() {
                   <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
                     <tr>
                       <td style="vertical-align: middle; padding-right: 12px; border: none;">
-                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: -3px;" onerror="this.style.display='none'" />
+                        <img src="${import.meta.env.BASE_URL}kantongmas.png" alt="Logo" style="height: 40px; width: auto; display: block; position: relative; top: 2px;" onerror="this.style.display='none'" />
                       </td>
                       <td style="vertical-align: middle; border: none; padding: 0; text-align: left;">
                         <div class="company-name">${storeName}</div>
@@ -198,8 +341,7 @@ export default function ReceivablesPage() {
                 </td>
                 <td style="width: 40%; text-align: right; vertical-align: top;">
                   <h1 class="invoice-title">FAKTUR PENAGIHAN</h1>
-                  <div style="font-size: 10px; font-weight: 700; color: #475569; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
-                    <span class="invoice-copy-badge">${copyLabel}</span>
+                  <div style="font-size: 12px; font-weight: 700; margin-top: 4px; display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; width: 100%;">
                     <span class="invoice-status-badge ${badgeClass}">${statusLabel}</span>
                   </div>
                 </td>
@@ -211,7 +353,7 @@ export default function ReceivablesPage() {
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
               <tr>
                 <td style="width: 70%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Kepada Yth.</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -225,7 +367,7 @@ export default function ReceivablesPage() {
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">Alamat</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
-                      <td style="padding: 2px 0; font-size: 9.5px; line-height: 1.2;">
+                      <td style="padding: 2px 0; font-size: 11.4px; line-height: 1.2;">
                         ${trx.customers?.address || trx.customer?.address || trx.customer_address || '-'}
                         ${trx.customers?.district || trx.customer?.district || trx.customer_district ? `, ${trx.customers?.district || trx.customer?.district || trx.customer_district}` : ''}
                         ${trx.customers?.city || trx.customer?.city || trx.customer_city ? `, ${trx.customers?.city || trx.customer?.city || trx.customer_city}` : ''}
@@ -235,7 +377,7 @@ export default function ReceivablesPage() {
                 </td>
                 <td style="width: 2%;"></td>
                 <td style="width: 28%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <tr>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 0; color: #475569; font-weight: 500;">No. Invoice</td>
                       <td style="width: 1%; white-space: nowrap; padding: 2px 8px 2px 4px; color: #475569;">:</td>
@@ -273,25 +415,24 @@ export default function ReceivablesPage() {
 
             <table style="width: 100%; border-collapse: collapse; margin-top: 4px;">
               <tr>
-                <td style="width: 70%; vertical-align: top;">
-                  <div class="reason-section" style="font-size: 8.5px; border: 1px solid #e2e8f0; padding: 10px 8px; border-radius: 4px; background-color: #f8fafc;">
-                    <strong>Jatuh Tempo: ${trx.due_date ? formatSimpleDate(trx.due_date) : '-'}</strong>
+                <td style="width: 55%; vertical-align: top;">
+                  <div style="font-size: 14.4px; line-height: 1.6; color: #0f172a;">
+                    Jatuh Tempo : <strong>${trx.due_date ? formatSimpleDate(trx.due_date) : '-'}</strong>
                   </div>
                 </td>
-                <td style="width: 2%;"></td>
-                <td style="width: 28%; vertical-align: top;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 9.5px;">
+                <td style="width: 45%; vertical-align: top; text-align: right;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11.4px; line-height: 1.4; float: right;">
                     <tr>
-                      <td style="text-align: left; padding: 2px 0; color: #475569; white-space: nowrap;">Subtotal</td>
-                      <td style="text-align: right; padding: 2px 0; font-weight: 600;">${formatRupiah(trx.subtotal || 0)}</td>
+                      <td style="color: #475569; font-weight: 500; text-align: left; padding: 2px 0;">Subtotal</td>
+                      <td style="text-align: right; color: #0f172a; font-weight: 600; padding: 2px 0;">${formatRupiah(trx.subtotal || 0)}</td>
                     </tr>
                     <tr>
-                      <td style="text-align: left; padding: 2px 0; color: #475569; white-space: nowrap;">Sudah Dibayar</td>
-                      <td style="text-align: right; padding: 2px 0; font-weight: 600; color: #16a34a;">${formatRupiah(totalPaid)}</td>
+                      <td style="color: #475569; font-weight: 500; text-align: left; padding: 2px 0;">Sudah Dibayar</td>
+                      <td style="text-align: right; font-weight: 600; color: #16a34a; padding: 2px 0;">${formatRupiah(totalPaid)}</td>
                     </tr>
-                    <tr style="border-top: 1px solid #cbd5e1;">
-                      <td style="text-align: left; padding: 4px 0; font-weight: 700; color: #0f172a; white-space: nowrap;">SISA TAGIHAN</td>
-                      <td style="text-align: right; padding: 4px 0; font-weight: 800; color: #ea580c; font-size: 11px;">${formatRupiah(trx.remaining_balance || 0)}</td>
+                    <tr>
+                      <td style="color: #ea580c; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; text-align: left; font-size: 15.6px;">SISA TAGIHAN</td>
+                      <td style="text-align: right; color: #ea580c; font-weight: 800; border-top: 1.5px solid #0f172a; padding-top: 4px; font-size: 15.6px;">${formatRupiah(trx.remaining_balance || 0)}</td>
                     </tr>
                   </table>
                 </td>
@@ -302,14 +443,14 @@ export default function ReceivablesPage() {
           <div>
             <table style="width: 100%; margin-top: 12px; border-collapse: collapse;">
               <tr>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Penerima,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
                     ( _________________ )
                   </div>
                 </td>
-                <td style="width: 50%; text-align: center; font-size: 10px; color: #334155; vertical-align: top;">
+                <td style="width: 50%; text-align: center; font-size: 12px; color: #334155; vertical-align: top;">
                   <div>Hormat Kami,</div>
                   <div style="height: 32px;"></div>
                   <div style="color: #0f172a; display: inline-block; min-width: 130px; padding-top: 2px; font-family: monospace;">
@@ -319,14 +460,14 @@ export default function ReceivablesPage() {
               </tr>
             </table>
             
-            <div style="text-align: left; font-size: 8px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
+            <div style="text-align: left; font-size: 9.6px; font-style: italic; color: #475569; margin-top: 10px; line-height: 1.2; width: 100%;">
               Pembayaran Transfer melalui Bank: <strong>${storeInfo?.bankName || 'BCA'} ${storeInfo?.bankAccount || '4451377137'}</strong> a/n <strong>${storeInfo?.bankAccountName || 'AULIA USAHA'}</strong>
             </div>
             
-            <div class="footer-divider" style="border-top: 1px solid #cbd5e1; margin-top: 6px; margin-bottom: 2px;"></div>
+            <div class="footer-divider"></div>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="text-align: center; font-size: 8.5px; color: #64748b;">
+                <td style="text-align: center; font-size: 10.2px; color: #64748b;">
                   ${storeInfo?.footer || 'Terima Kasih Sudah Melakukan Order'}
                 </td>
               </tr>
@@ -341,78 +482,55 @@ export default function ReceivablesPage() {
       <html>
       <head>
         <title>Faktur Penagihan - ${formatInvoiceNumber(trx.id)}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+          @font-face {
+            font-family: 'GoogleSansFlex';
+            src: url('${import.meta.env.BASE_URL}GoogleSansFlex_9pt-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
           @page {
-            size: A4 portrait;
+            size: auto;
             margin: 0mm;
           }
           @media print {
-            body { margin: 0; padding: 8mm 10mm; }
+            body { margin: 0; padding: 5mm 8mm; }
             .no-print { display: none !important; }
-            .invoice-copy { border: 1px solid transparent !important; }
+            .invoice-copy { border: none !important; }
           }
           * {
             box-sizing: border-box;
-            font-weight: 800 !important;
             color: #000000 !important;
+            font-family: 'GoogleSansFlex', Arial, Helvetica, sans-serif !important;
+            font-weight: bold !important;
           }
           body {
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 13.2px;
+            font-weight: 600;
             line-height: 1.35;
             margin: 0;
-            padding: 8mm 10mm;
-            color: #000000;
+            padding: 5mm 8mm;
             background-color: #ffffff;
           }
           .print-wrapper {
             display: flex;
             flex-direction: column;
-            height: 270mm;
-            justify-content: space-between;
           }
           .invoice-copy {
-            height: 129mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            border: 1px dashed #cbd5e1;
-            padding: 10px;
-            border-radius: 6px;
+            border: none;
+            padding: 0;
             background-color: #ffffff;
-          }
-          .cut-divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 8px;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            margin: 1mm 0;
-            border-top: 1px dashed #cbd5e1;
-            position: relative;
-            height: 1px;
-          }
-          .cut-divider span {
-            background: #ffffff;
-            padding: 0 10px;
-            position: absolute;
-            top: -6px;
-            text-transform: uppercase;
           }
           .info-table {
             width: 100%;
             border-collapse: collapse;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 15.6px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
@@ -421,31 +539,19 @@ export default function ReceivablesPage() {
           }
           .company-address, .company-contact {
             margin: 0;
-            font-size: 8.5px;
+            font-size: 10.2px;
             color: #475569;
           }
           .invoice-title {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
             margin: 0;
             letter-spacing: 0.02em;
           }
-          .invoice-copy-badge {
-            display: inline-block;
-            font-size: 7.5px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            padding: 1px 5px;
-            border-radius: 3px;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            text-transform: uppercase;
-          }
           .invoice-status-badge {
             display: inline-block;
-            font-size: 7.5px;
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.05em;
             padding: 1px 5px;
@@ -475,47 +581,40 @@ export default function ReceivablesPage() {
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 4px 0;
+            margin-bottom: 8px;
           }
           .items-table th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-size: 8.5px;
-            font-weight: 700;
+            color: #000000 !important;
+            font-size: 12px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             padding: 4px 6px;
-            border-bottom: 1.5px solid #0f172a;
-            border-top: 1px solid #e2e8f0;
+            border-bottom: 1.5px solid #000000;
+            border-top: 1.5px solid #000000;
           }
           .items-table td {
             padding: 4px 6px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 9px;
-            vertical-align: middle;
+            font-size: 13.2px;
+            border-bottom: none;
+            color: #000000 !important;
+          }
+          .items-table tr:last-child td {
+            border-bottom: 1.5px solid #000000;
           }
           .items-table tr.empty-row td {
-            border-bottom: 1px solid #f8fafc;
-            color: transparent;
-            user-select: none;
+            height: 15px;
+            padding: 2px 6px;
           }
-          .reason-section {
-            font-size: 8px;
-            line-height: 1.3;
-            color: #475569;
-            margin-top: 2px;
+          .footer-divider {
+            border: none;
+            border-top: 1px solid #cbd5e1;
+            margin: 6px 0 4px 0;
           }
         </style>
       </head>
       <body>
         <div class="print-wrapper">
-          ${getInvoiceContentHtml('KANTOR')}
-          
-          <div class="cut-divider">
-            <span>Gunting di sini</span>
-          </div>
-
-          ${getInvoiceContentHtml('PELANGGAN')}
+          ${getInvoiceContentHtml()}
         </div>
 
         <script>
@@ -1542,135 +1641,206 @@ export default function ReceivablesPage() {
 
         {/* Detail Modal */}
         <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto scrollbar-hide">
-            <DialogHeader>
-              <DialogTitle>Rincian Transaksi</DialogTitle>
-              <DialogDescription>
-                Detail item transaksi untuk Invoice {selectedDetailId ? formatInvoiceNumber(selectedDetailId) : ''}
-              </DialogDescription>
-            </DialogHeader>
-
-            {isLoadingDetail ? (
+          <DialogContent className="max-w-md p-0 overflow-hidden bg-slate-50 border-none rounded-xl shadow-2xl scrollbar-hide">
+            {!detailTransaction ? (
               <div className="py-12 flex flex-col justify-center items-center gap-3 text-slate-500">
                 <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <p className="text-xs font-medium">Memuat rincian...</p>
-              </div>
-            ) : detailTransaction ? (
-              <div className="space-y-4 py-4">
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Pelanggan</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{detailTransaction.customers?.name || detailTransaction.customer?.name || detailTransaction.customer_name || '-'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Sales</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{detailTransaction.cashier_name || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Tgl Transaksi</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatSimpleDate(detailTransaction.created_at)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Jatuh Tempo</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{detailTransaction.due_date ? formatSimpleDate(detailTransaction.due_date) : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Tipe Pembayaran</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {detailTransaction.payment_method === 'cash' ? 'Tunai' : detailTransaction.payment_method === 'transfer' ? 'Transfer' : detailTransaction.payment_method || '-'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Status Pembayaran</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {detailTransaction.payment_status === 'paid' ? 'Lunas' : detailTransaction.payment_status === 'partial' ? 'Cicilan' : 'Tempo Penuh'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Sudah Dibayar</p>
-                    <p className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {formatRupiah(((detailTransaction.subtotal || 0) + (detailTransaction.tax || 0) - (detailTransaction.discount || 0)) - (detailTransaction.remaining_balance || 0))}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Kekurangan Pembayaran</p>
-                    <p className="font-semibold text-red-600 dark:text-red-400">
-                      {formatRupiah(detailTransaction.remaining_balance || 0)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-slate-50 dark:bg-slate-800">
-                      <TableRow>
-                        <TableHead>Produk</TableHead>
-                        <TableHead className="text-right">Harga</TableHead>
-                        <TableHead className="text-center">Qty</TableHead>
-                        <TableHead className="text-right">Subtotal</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {detailTransaction.transaction_items?.map((item: any, idx: number) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-medium">{item.product_name}</TableCell>
-                          <TableCell className="text-right">{formatRupiah(item.price)}</TableCell>
-                          <TableCell className="text-center">{item.quantity}</TableCell>
-                          <TableCell className="text-right font-medium">{formatRupiah(item.price * item.quantity)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="flex justify-between items-center pt-2">
-                  <div className="text-slate-500">
-                    <p className="text-sm">Subtotal: {formatRupiah(detailTransaction.subtotal)}</p>
-                    {detailTransaction.tax > 0 && <p className="text-sm">Pajak: {formatRupiah(detailTransaction.tax)}</p>}
-                    {detailTransaction.discount > 0 && <p className="text-sm">Diskon: -{formatRupiah(detailTransaction.discount)}</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">Total Transaksi</p>
-                    <p className="text-xl font-bold text-primary">{formatRupiah((detailTransaction.subtotal || 0) + (detailTransaction.tax || 0) - (detailTransaction.discount || 0))}</p>
-                  </div>
-                </div>
+                <p className="text-xs font-medium">Memuat detail struk...</p>
               </div>
             ) : (
-              <div className="py-8 text-center text-slate-500">
-                Gagal memuat detail transaksi.
+              <div className="flex flex-col h-full max-h-[85vh]">
+                <div className="p-4 border-b border-slate-200 bg-white flex flex-col justify-center items-center shrink-0">
+                  <DialogTitle className="font-bold text-lg">Detail Transaksi</DialogTitle>
+                  <DialogDescription className="sr-only">Rincian struk transaksi lengkap</DialogDescription>
+                </div>
+
+                <div className="p-4 sm:p-6 overflow-y-auto bg-white m-4 rounded-xl shadow-sm border border-slate-200 printable-receipt [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6">
+                    <div className="text-center mb-4">
+                      <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{storeInfo?.name || 'KANTONG-MAS'}</h2>
+                      <p className="text-xs text-slate-500 mt-1">{storeInfo?.address || 'Jl. Condongcatur No.123 Yk'}</p>
+                      {storeInfo?.phone && <p className="text-xs text-slate-400 mt-0.5">{storeInfo.phone}</p>}
+                    </div>
+                    <div className="flex justify-between items-start">
+                      <div className="text-left">
+                        <p className="text-xs sm:text-sm text-slate-600 font-medium">
+                          {detailTransaction.created_at ? new Date(detailTransaction.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {detailTransaction.created_at ? new Date(detailTransaction.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm text-slate-600 font-medium font-mono">{formatInvoiceNumber(detailTransaction.id)}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{detailTransaction.cashier_name || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mb-4 sm:mb-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs sm:text-sm text-slate-500">Status</span>
+                      {detailTransaction.payment_status === 'partial' ? (
+                        <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-medium">CICILAN</Badge>
+                      ) : detailTransaction.payment_status === 'unpaid' ? (
+                        <Badge variant="destructive" className="font-medium">TEMPO</Badge>
+                      ) : (
+                        <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium">LUNAS</Badge>
+                      )}
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-slate-500">Pelanggan</span>
+                      <span className="font-medium text-right">{detailTransaction.customers?.name || detailTransaction.customer?.name || detailTransaction.customer_name || "-"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-slate-500">Metode Pembayaran</span>
+                      <span className="font-medium">
+                        {detailTransaction.payment_method === 'cash' ? 'Tunai' : detailTransaction.payment_method === 'transfer' ? 'Transfer' : detailTransaction.payment_method === 'qris' ? 'QRIS' : detailTransaction.payment_method || '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="py-3 sm:py-4 space-y-3 sm:space-y-4 font-mono text-xs sm:text-sm">
+                    {detailTransaction.transaction_items?.map((item: any, idx: number) => {
+                      const baseQty = item.quantity || 0;
+                      const qty = item.unit_qty !== undefined && item.unit_qty !== null ? item.unit_qty : baseQty;
+                      const subtotal = item.subtotal || 0;
+                      const totalDiscount = (item.discount_amount || 0) * baseQty;
+                      
+                      let totalOriginalPrice = (item.original_price || item.price || 0) * baseQty;
+                      if (totalDiscount > 0 && totalOriginalPrice <= subtotal) {
+                        totalOriginalPrice = subtotal + totalDiscount;
+                      }
+                      const displayOriginalPrice = qty > 0 ? (totalOriginalPrice / qty) : 0;
+
+                      return (
+                        <div key={idx} className="flex justify-between items-start gap-2 break-inside-avoid">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-900 break-words">{item.product_name}</p>
+                            <p className="text-slate-700 mt-0.5 text-xs">
+                              {qty} x {formatRupiah(displayOriginalPrice)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-slate-900 whitespace-nowrap">{formatRupiah(displayOriginalPrice * qty)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t border-dashed border-slate-300 dark:border-slate-600 pt-3 mt-3 space-y-1 font-mono text-sm">
+                    {(() => {
+                      const grossSubtotal = detailTransaction.transaction_items?.reduce((sum: number, item: any) => {
+                        const baseQty = item.quantity || 0;
+                        const subtotal = item.subtotal || 0;
+                        const totalDiscount = (item.discount_amount || 0) * baseQty;
+                        let totalOrig = (item.original_price || item.price || 0) * baseQty;
+                        if (totalDiscount > 0 && totalOrig <= subtotal) totalOrig = subtotal + totalDiscount;
+                        return sum + totalOrig;
+                      }, 0) || detailTransaction.subtotal || 0;
+
+                      const totalItemDiscounts = detailTransaction.transaction_items?.reduce((sum: number, item: any) => sum + ((item.discount_amount || 0) * (item.quantity || 0)), 0) || 0;
+                      const totalDiscount = totalItemDiscounts + (detailTransaction.discount || 0);
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
+                            <span className="text-slate-800 dark:text-slate-200">{formatRupiah(grossSubtotal)}</span>
+                          </div>
+                          {totalDiscount > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Diskon</span>
+                              <span className="text-slate-800 dark:text-slate-200">{formatRupiah(totalDiscount)}</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {detailTransaction.tax && detailTransaction.tax > 0 ? (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">Pajak</span>
+                        <span className="text-slate-800 dark:text-slate-200">{formatRupiah(detailTransaction.tax)}</span>
+                      </div>
+                    ) : null}
+
+                    <div className="flex justify-between font-bold text-base pt-1 pb-3">
+                      <span className="text-slate-700 dark:text-slate-200">Grand Total</span>
+                      <span className="text-slate-900 dark:text-slate-100">{formatRupiah((detailTransaction.subtotal || 0) + (detailTransaction.tax || 0) - (detailTransaction.discount || 0))}</span>
+                    </div>
+                  </div>
+
+                  {detailTransaction.payment_status === 'partial' && (
+                    <div className="space-y-2 py-4 sm:py-6 font-mono text-xs sm:text-sm">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Cicilan Dibayar</span>
+                        <span>{formatRupiah(detailTransaction.amount_paid || 0)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span>Sisa Tagihan</span>
+                        <span className="text-red-600">{formatRupiah(detailTransaction.remaining_balance || 0)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {detailTransaction.payment_status === 'unpaid' && (
+                    <div className="space-y-2 py-4 sm:py-6 font-mono text-xs sm:text-sm">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span>Tagihan (Tempo Penuh)</span>
+                        <span className="text-red-600">{formatRupiah(detailTransaction.remaining_balance || 0)}</span>
+                      </div>
+                      {detailTransaction.due_date && (
+                        <div className="flex justify-between text-slate-600 mt-1">
+                          <span>Jatuh Tempo</span>
+                          <span>{new Date(detailTransaction.due_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {storeInfo?.footer && (
+                    <div className="mt-6 sm:mt-8 text-center text-slate-400 text-xs space-y-1">
+                      <p>{storeInfo.footer}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 border-t border-slate-200 bg-white flex justify-between items-center gap-2 shrink-0 overflow-x-auto">
+                  <div className="flex-1 flex gap-2">
+                    {!(Capacitor.getPlatform() === 'android') && (
+                      <Button variant="outline" onClick={() => handlePrintInvoice(detailTransaction)}>
+                        <Printer className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Cetak Faktur</span>
+                        <span className="sm:hidden">Faktur</span>
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={() => handlePrintReceipt(detailTransaction)} disabled={isPrinting}>
+                      <Receipt className="w-4 h-4 mr-2" />
+                      {isPrinting ? (
+                        <span className="hidden sm:inline">Mencetak...</span>
+                      ) : (
+                        <span className="hidden sm:inline">Cetak Struk</span>
+                      )}
+                      {isPrinting ? (
+                        <span className="sm:hidden">Proses</span>
+                      ) : (
+                        <span className="sm:hidden">Struk</span>
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isAdmin && activeTab === 'history' && (
+                      <Button size="icon" variant="ghost" className="text-slate-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteTransaction(detailTransaction.id)} disabled={deleteTransaction.isPending} title="Hapus Transaksi">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button onClick={() => setIsDetailModalOpen(false)}>Tutup</Button>
+                  </div>
+                </div>
               </div>
             )}
-
-            <div className="flex flex-row justify-between items-center w-full gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <div>
-                {!(Capacitor.getPlatform() === 'android') && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex items-center gap-2 border-primary text-primary hover:bg-primary/10"
-                    onClick={() => handlePrintInvoice(detailTransaction)}
-                  >
-                    <Printer className="w-4 h-4" />
-                    Cetak Faktur
-                  </Button>
-                )}
-              </div>
-              <div className="flex gap-2 items-center">
-                {isAdmin && activeTab === 'history' && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className="flex items-center gap-2"
-                    onClick={() => handleDeleteTransaction(detailTransaction.id)}
-                    disabled={deleteTransaction.isPending}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    {deleteTransaction.isPending ? "Menghapus..." : "Hapus"}
-                  </Button>
-                )}
-                <Button onClick={() => setIsDetailModalOpen(false)}>Tutup</Button>
-              </div>
-            </div>
           </DialogContent>
         </Dialog>
 
