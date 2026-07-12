@@ -1397,95 +1397,95 @@ export default function ReceivablesPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                    <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="whitespace-nowrap w-[130px]">ID Transaksi</TableHead>
-                      <TableHead className="whitespace-nowrap min-w-[120px]">Tgl Transaksi</TableHead>
-                      <TableHead className="whitespace-nowrap min-w-[180px]">Pelanggan</TableHead>
-                      <TableHead className="whitespace-nowrap text-center min-w-[130px]">Jatuh Tempo</TableHead>
-                      <TableHead className="whitespace-nowrap text-right min-w-[140px]">Total Transaksi</TableHead>
-                      <TableHead className="whitespace-nowrap text-right min-w-[140px]">Sisa Tagihan</TableHead>
-                      <TableHead className="whitespace-nowrap text-center min-w-[130px]">Sales</TableHead>
-                      <TableHead className="whitespace-nowrap text-center min-w-[110px]">Status</TableHead>
-                      <TableHead className="whitespace-nowrap text-right min-w-[100px]">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="py-12">
-                          <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
-                            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                            <p className="text-xs font-medium">Memuat...</p>
-                          </div>
-                        </TableCell>
+                      <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                        <TableHead className="whitespace-nowrap w-[130px]">ID Transaksi</TableHead>
+                        <TableHead className="whitespace-nowrap min-w-[120px]">Tgl Transaksi</TableHead>
+                        <TableHead className="whitespace-nowrap min-w-[180px]">Pelanggan</TableHead>
+                        <TableHead className="whitespace-nowrap text-center min-w-[130px]">Jatuh Tempo</TableHead>
+                        <TableHead className="whitespace-nowrap text-right min-w-[140px]">Total Transaksi</TableHead>
+                        <TableHead className="whitespace-nowrap text-right min-w-[140px]">Sisa Tagihan</TableHead>
+                        <TableHead className="whitespace-nowrap text-center min-w-[130px]">Sales</TableHead>
+                        <TableHead className="whitespace-nowrap text-center min-w-[110px]">Status</TableHead>
+                        <TableHead className="whitespace-nowrap text-right min-w-[100px]">Aksi</TableHead>
                       </TableRow>
-                    ) : filteredReceivables?.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center py-12">
-                          {activeTab === 'outstanding' ? (
-                            <div className="flex flex-col items-center justify-center text-slate-500">
-                              <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-3" />
-                              <p className="text-lg font-medium text-slate-900 dark:text-white">Semua Piutang Lunas!</p>
-                              <p className="text-sm">Tidak ada pelanggan yang menunggak pembayaran saat ini.</p>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="py-12">
+                            <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
+                              <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                              <p className="text-xs font-medium">Memuat...</p>
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center text-slate-500">
-                              <FileText className="w-12 h-12 text-slate-300 mb-3" />
-                              <p className="text-lg font-medium text-slate-900 dark:text-white">Belum Ada Riwayat Pelunasan</p>
-                              <p className="text-sm">Riwayat pelunasan piutang yang selesai akan muncul di sini.</p>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedReceivables?.map((trx: any) => {
-                        const isOverdue = isDateOverdue(trx.due_date);
-                        return (
-                          <TableRow key={trx.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handleRowClick(trx)}>
-                            <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">{formatInvoiceNumber(trx.id)}</TableCell>
-                            <TableCell className="text-slate-500 text-sm whitespace-nowrap">
-                              {formatSimpleDate(trx.created_at)}
-                            </TableCell>
-                            <TableCell className="font-medium whitespace-nowrap truncate max-w-[200px]">
-                              {trx.customer?.name || trx.customer_name || '-'}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap text-center">
-                              <div className={`flex items-center justify-center gap-1.5 text-sm ${isOverdue && trx.payment_status !== 'paid' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-600 dark:text-slate-400'}`}>
-                                {isOverdue && trx.payment_status !== 'paid' && <AlertCircle className="w-3.5 h-3.5" />}
-                                {formatSimpleDate(trx.due_date)}
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredReceivables?.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-12">
+                            {activeTab === 'outstanding' ? (
+                              <div className="flex flex-col items-center justify-center text-slate-500">
+                                <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-3" />
+                                <p className="text-lg font-medium text-slate-900 dark:text-white">Semua Piutang Lunas!</p>
+                                <p className="text-sm">Tidak ada pelanggan yang menunggak pembayaran saat ini.</p>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah((trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0))}</TableCell>
-                            <TableCell className={`text-right font-bold whitespace-nowrap ${trx.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{formatRupiah(trx.remaining_balance)}</TableCell>
-                            <TableCell className="text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap truncate max-w-[130px]">{trx.cashier_name || '-'}</TableCell>
-                            <TableCell className="text-center whitespace-nowrap">{getStatusBadge(trx.payment_status)}</TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
-                              {pendingTransactionIds.has(trx.id) ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                  Menunggu
-                                </span>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant={activeTab === 'history' ? "outline" : "default"}
-                                  className={
-                                    activeTab === 'outstanding'
-                                      ? "bg-emerald-600 hover:bg-emerald-700 !text-white shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:translate-y-0 duration-200 border-0 transition-all cursor-pointer !font-bold tracking-wide"
-                                      : ""
-                                  }
-                                  onClick={(e) => { e.stopPropagation(); handleOpenPayment(trx); }}
-                                >
-                                  {activeTab === 'history' ? "Detail" : "Bayar"}
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-slate-500">
+                                <FileText className="w-12 h-12 text-slate-300 mb-3" />
+                                <p className="text-lg font-medium text-slate-900 dark:text-white">Belum Ada Riwayat Pelunasan</p>
+                                <p className="text-sm">Riwayat pelunasan piutang yang selesai akan muncul di sini.</p>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedReceivables?.map((trx: any) => {
+                          const isOverdue = isDateOverdue(trx.due_date);
+                          return (
+                            <TableRow key={trx.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handleRowClick(trx)}>
+                              <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">{formatInvoiceNumber(trx.id)}</TableCell>
+                              <TableCell className="text-slate-500 text-sm whitespace-nowrap">
+                                {formatSimpleDate(trx.created_at)}
+                              </TableCell>
+                              <TableCell className="font-medium whitespace-nowrap truncate max-w-[200px]">
+                                {trx.customer?.name || trx.customer_name || '-'}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-center">
+                                <div className={`flex items-center justify-center gap-1.5 text-sm ${isOverdue && trx.payment_status !== 'paid' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-600 dark:text-slate-400'}`}>
+                                  {isOverdue && trx.payment_status !== 'paid' && <AlertCircle className="w-3.5 h-3.5" />}
+                                  {formatSimpleDate(trx.due_date)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah((trx.subtotal || 0) + (trx.tax || 0) - (trx.discount || 0))}</TableCell>
+                              <TableCell className={`text-right font-bold whitespace-nowrap ${trx.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{formatRupiah(trx.remaining_balance)}</TableCell>
+                              <TableCell className="text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap truncate max-w-[130px]">{trx.cashier_name || '-'}</TableCell>
+                              <TableCell className="text-center whitespace-nowrap">{getStatusBadge(trx.payment_status)}</TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                {pendingTransactionIds.has(trx.id) ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                    Menunggu
+                                  </span>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant={activeTab === 'history' ? "outline" : "default"}
+                                    className={
+                                      activeTab === 'outstanding'
+                                        ? "bg-emerald-600 hover:bg-emerald-700 !text-white shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:translate-y-0 duration-200 border-0 transition-all cursor-pointer !font-bold tracking-wide"
+                                        : ""
+                                    }
+                                    onClick={(e) => { e.stopPropagation(); handleOpenPayment(trx); }}
+                                  >
+                                    {activeTab === 'history' ? "Detail" : "Bayar"}
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </>
@@ -1706,7 +1706,7 @@ export default function ReceivablesPage() {
                       const qty = item.unit_qty !== undefined && item.unit_qty !== null ? item.unit_qty : baseQty;
                       const subtotal = item.subtotal || 0;
                       const totalDiscount = (item.discount_amount || 0) * baseQty;
-                      
+
                       let totalOriginalPrice = (item.original_price || item.price || 0) * baseQty;
                       if (totalDiscount > 0 && totalOriginalPrice <= subtotal) {
                         totalOriginalPrice = subtotal + totalDiscount;

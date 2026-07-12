@@ -1,8 +1,7 @@
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.0.2';
 
 export const RELEASE_CHANGELOG = [
-  "update - forgot password",
-  "update - faktur cetak"
+  "update build"
 ];
 
 export interface UpdateInfo {

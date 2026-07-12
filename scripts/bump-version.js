@@ -20,9 +20,9 @@ async function prompt(question) {
 }
 
 async function run() {
-  console.log('\n=============================');
-  console.log('   CV.AULIA-USAHA VERSION MANAGER');
-  console.log('=============================\n');
+  console.log('\n=================================');
+  console.log('   KANTONG MAS VERSION MANAGER');
+  console.log('=================================\n');
 
   // Baca isi file saat ini
   let content = fs.readFileSync(versionFilePath, 'utf-8');
@@ -39,7 +39,7 @@ async function run() {
   console.log('\nMasukkan CHANGELOG (kosongkan dan tekan Enter jika sudah selesai):');
   const changelogs = [];
   let index = 1;
-  
+
   while (true) {
     const log = await prompt(`${index}. `);
     if (!log) break;
@@ -58,7 +58,7 @@ async function run() {
   if (changelogs.length > 0) {
     const items = changelogs.map(item => `  "${item}"`);
     const newChangelogArray = `[\n${items.join(',\n')}\n];`;
-    
+
     // Ganti array changelog yang lama
     content = content.replace(
       /export const RELEASE_CHANGELOG = \[([\s\S]*?)\];/,
