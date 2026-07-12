@@ -43,9 +43,9 @@ export default function ForgotPasswordPage() {
       // Deteksi jika aplikasi berjalan di Desktop (Tauri)
       const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-      const redirectUrl = (Capacitor.isNativePlatform() || isTauri)
+      const redirectUrl = (Capacitor.isNativePlatform() || isTauri || window.location.hostname === 'elproject-dev.github.io')
         ? `https://elproject-dev.github.io/KANTONG-MAS/update-password`
-        : new URL("update-password", window.location.origin + import.meta.env.BASE_URL).href;
+        : `${window.location.origin}/update-password`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
