@@ -36,6 +36,7 @@ interface CartItem {
   uomDiscountAmount?: number;
   uomMinQty?: number;
   uomLabel?: string;
+  manualDiscountAmount?: number;
 }
 
 // Helper function untuk format angka dengan titik ribuan
@@ -166,7 +167,8 @@ export default function POSPage() {
         uomDiscountType: 'none',
         uomDiscountAmount: 0,
         uomMinQty: 1,
-        uomLabel: ''
+        uomLabel: '',
+        manualDiscountAmount: item.discount_amount ? (item.discount_amount * (item.conversion_factor || 1)) : undefined
       }));
 
       setCart(newCart);
@@ -271,10 +273,30 @@ export default function POSPage() {
   }, [isEditMode, editTransactionData, customers]);
 
   const getProductBasePrice = (product: any) => {
+    // Priority 1: Base UOM (pcs) outlet-specific price or global price
+    const baseUom = (product.uoms || []).find((u: any) => u.conversion_factor === 1 || u.is_default);
+    if (baseUom) {
+      if (selectedOutlet && selectedOutlet !== "all" && baseUom.outlet_prices) {
+        let outletUomPrices = baseUom.outlet_prices;
+        if (typeof outletUomPrices === 'string') {
+          try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) {}
+        }
+        if (outletUomPrices && outletUomPrices[selectedOutlet]) {
+          return Number(outletUomPrices[selectedOutlet]);
+        }
+      }
+      if (baseUom.price) return Number(baseUom.price);
+    }
+
+    // Priority 2: Product outlet-specific price
     let basePrice = product.price;
     if (selectedOutlet && selectedOutlet !== "all" && product.outlet_prices) {
-      if (product.outlet_prices[selectedOutlet]) {
-        basePrice = Number(product.outlet_prices[selectedOutlet]);
+      let outletPrices = product.outlet_prices;
+      if (typeof outletPrices === 'string') {
+        try { outletPrices = JSON.parse(outletPrices); } catch (e) {}
+      }
+      if (outletPrices && outletPrices[selectedOutlet]) {
+        basePrice = Number(outletPrices[selectedOutlet]);
       }
     }
     return basePrice;
@@ -284,12 +306,16 @@ export default function POSPage() {
   const getUomPrice = (uom: any, product: any) => {
     // Priority 1: UOM outlet-specific price
     if (selectedOutlet && selectedOutlet !== "all" && uom.outlet_prices) {
-      const outletUomPrice = uom.outlet_prices[selectedOutlet];
+      let outletUomPrices = uom.outlet_prices;
+      if (typeof outletUomPrices === 'string') {
+        try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) {}
+      }
+      const outletUomPrice = outletUomPrices && outletUomPrices[selectedOutlet];
       if (outletUomPrice) return Number(outletUomPrice);
     }
     // Priority 2: UOM global custom price
     if (uom.price) return Number(uom.price);
-    // Priority 3: Product area price Ã— conversion factor
+    // Priority 3: Product area price × conversion factor
     return getProductBasePrice(product) * (uom.conversion_factor || 1);
   };
 
@@ -718,6 +744,15 @@ export default function POSPage() {
     }
   };
 
+  const updateItemManualDiscount = (productId: number, unitName: string, discountVal: number) => {
+    setCart(prev => prev.map(i => {
+      if (i.productId === productId && i.unitName === unitName) {
+        return { ...i, manualDiscountAmount: isNaN(discountVal) ? 0 : discountVal };
+      }
+      return i;
+    }));
+  };
+
   const clearCart = () => {
     if (cart.length > 0 && confirm("Hapus semua item dari keranjang?")) {
       setCart([]);
@@ -771,7 +806,7 @@ export default function POSPage() {
   };
 
   const getCartItemPriceAndDiscount = (item: CartItem) => {
-    const product = posProducts.find(p => p.id === item.productId);
+    const product = (products || []).find((p: any) => p.id === item.productId);
     if (!product) {
       const activeDiscount = item.quantity >= (item.uomMinQty || 1) ? (item.uomDiscountAmount || 0) : 0;
       return { price: item.unitPrice, discount: activeDiscount, label: item.uomLabel };
@@ -801,13 +836,17 @@ export default function POSPage() {
       }
     }
 
-    return { price: basePrice, discount: discountAmountPerUnit, label: activeUom.label || '' };
+    if (item.manualDiscountAmount !== undefined) {
+      discountAmountPerUnit = item.manualDiscountAmount;
+    }
+
+    return { price: basePrice, discount: discountAmountPerUnit, label: item.manualDiscountAmount !== undefined ? 'Manual' : (activeUom.label || '') };
   };
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => {
     const { price, discount } = getCartItemPriceAndDiscount(item);
     return sum + ((price - discount) * item.quantity);
-  }, 0), [cart, posProducts]);
+  }, 0), [cart, products, selectedOutlet]);
 
   const tax = useMemo(() => {
     if (!enablePPN) return 0;
@@ -1341,6 +1380,18 @@ export default function POSPage() {
                                     </Badge>
                                   )}
                                 </div>
+                                {isAdmin && isEditMode && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <label className="text-[10px] text-slate-500">Diskon/item:</label>
+                                    <Input 
+                                      type="text" 
+                                      placeholder="0"
+                                      value={item.manualDiscountAmount ? formatNumberWithDots(item.manualDiscountAmount.toString()) : ''}
+                                      onChange={(e) => updateItemManualDiscount(item.productId, item.unitName, parseNumberFromDots(e.target.value))}
+                                      className="h-6 w-24 text-xs px-2"
+                                    />
+                                  </div>
+                                )}
                               </>
                             );
                           })()}
@@ -1664,29 +1715,7 @@ export default function POSPage() {
               </div>
             )}
 
-            {/* Discount Section for Admin */}
-            {enableDiscount && (
-              <div className="px-4 lg:px-3 pb-4 lg:pb-3">
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
-                  <label className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Tag className="w-3.5 h-3.5" />
-                    Diskon Admin (Rp)
-                  </label>
-                  <div className="flex flex-col gap-2">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 font-medium text-sm">Rp</span>
-                      <Input
-                        type="text"
-                        value={discountDisplay}
-                        onChange={handleDiscountChange}
-                        className="pl-9 h-9 border-emerald-200 focus-visible:ring-emerald-500 font-bold bg-white dark:bg-slate-900"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             {/* Summary */}
             <div className="px-4 lg:px-3 pb-4 lg:pb-3">
