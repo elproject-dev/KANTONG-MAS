@@ -1704,25 +1704,22 @@ export default function ReceivablesPage() {
                     {detailTransaction.transaction_items?.map((item: any, idx: number) => {
                       const baseQty = item.quantity || 0;
                       const qty = item.unit_qty !== undefined && item.unit_qty !== null ? item.unit_qty : baseQty;
-                      const subtotal = item.subtotal || 0;
-                      const totalDiscount = (item.discount_amount || 0) * baseQty;
-
-                      let totalOriginalPrice = (item.original_price || item.price || 0) * baseQty;
-                      if (totalDiscount > 0 && totalOriginalPrice <= subtotal) {
-                        totalOriginalPrice = subtotal + totalDiscount;
-                      }
-                      const displayOriginalPrice = qty > 0 ? (totalOriginalPrice / qty) : 0;
+                      
+                      const itemNetPrice = item.price || 0;
+                      const conversionFactor = qty > 0 ? (baseQty / qty) : 1;
+                      const displayNetPrice = itemNetPrice * conversionFactor;
+                      const totalItemNetPrice = displayNetPrice * qty;
 
                       return (
                         <div key={idx} className="flex justify-between items-start gap-2 break-inside-avoid">
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-slate-900 break-words">{item.product_name}</p>
                             <p className="text-slate-700 mt-0.5 text-xs">
-                              {qty} x {formatRupiah(displayOriginalPrice)}
+                              {qty} {item.unit_name || 'pcs'} x {formatRupiah(displayNetPrice)}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-slate-900 whitespace-nowrap">{formatRupiah(displayOriginalPrice * qty)}</p>
+                            <p className="font-bold text-slate-900 whitespace-nowrap">{formatRupiah(totalItemNetPrice)}</p>
                           </div>
                         </div>
                       );
@@ -1731,28 +1728,19 @@ export default function ReceivablesPage() {
 
                   <div className="border-t border-dashed border-slate-300 dark:border-slate-600 pt-3 mt-3 space-y-1 font-mono text-sm">
                     {(() => {
-                      const grossSubtotal = detailTransaction.transaction_items?.reduce((sum: number, item: any) => {
-                        const baseQty = item.quantity || 0;
-                        const subtotal = item.subtotal || 0;
-                        const totalDiscount = (item.discount_amount || 0) * baseQty;
-                        let totalOrig = (item.original_price || item.price || 0) * baseQty;
-                        if (totalDiscount > 0 && totalOrig <= subtotal) totalOrig = subtotal + totalDiscount;
-                        return sum + totalOrig;
-                      }, 0) || detailTransaction.subtotal || 0;
-
-                      const totalItemDiscounts = detailTransaction.transaction_items?.reduce((sum: number, item: any) => sum + ((item.discount_amount || 0) * (item.quantity || 0)), 0) || 0;
-                      const totalDiscount = totalItemDiscounts + (detailTransaction.discount || 0);
+                      const netSubtotal = detailTransaction.subtotal || 0;
+                      const globalDiscount = detailTransaction.discount || 0;
 
                       return (
                         <>
                           <div className="flex justify-between">
                             <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
-                            <span className="text-slate-800 dark:text-slate-200">{formatRupiah(grossSubtotal)}</span>
+                            <span className="text-slate-800 dark:text-slate-200">{formatRupiah(netSubtotal)}</span>
                           </div>
-                          {totalDiscount > 0 && (
+                          {globalDiscount > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-slate-600 dark:text-slate-400">Diskon</span>
-                              <span className="text-slate-800 dark:text-slate-200">{formatRupiah(totalDiscount)}</span>
+                              <span className="text-slate-600 dark:text-slate-400">Diskon Transaksi</span>
+                              <span className="text-slate-800 dark:text-slate-200">{formatRupiah(globalDiscount)}</span>
                             </div>
                           )}
                         </>

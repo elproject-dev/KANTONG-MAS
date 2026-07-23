@@ -63,7 +63,7 @@ export default function PromoPage() {
   const [isConfiguringCooldown, setIsConfiguringCooldown] = useState(false);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-  const storeName = localStorage.getItem("storeName") || "KANTONG-MAS";
+  const storeName = "kantong-mas";
 
   useEffect(() => {
     if (user) {
@@ -203,7 +203,7 @@ export default function PromoPage() {
     productDetails: string = "Rincian Produk"
   ) => {
     const cleanName = (customerName || "").trim();
-    const cleanStore = (storeName || "KANTONG-MAS").trim();
+    const cleanStore = (storeName || "kantong-mas").trim();
 
     return (message || "")
       .replace(/@/g, `*${cleanName}*`)

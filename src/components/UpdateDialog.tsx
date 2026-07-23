@@ -25,6 +25,14 @@ export function UpdateDialog() {
     // Cek update hanya jika auth sudah selesai loading dan user sudah login
     if (isLoading || !user) return;
 
+    // Hanya jalankan di perangkat native (Capacitor) atau Tauri (Desktop)
+    const isNative = Capacitor.isNativePlatform();
+    const isTauri = '__TAURI_INTERNALS__' in window;
+    
+    if (!isNative && !isTauri) {
+      return; // Sembunyikan di web
+    }
+
     checkForUpdate().then((info) => {
       if (info?.hasUpdate) {
         setUpdateInfo(info);

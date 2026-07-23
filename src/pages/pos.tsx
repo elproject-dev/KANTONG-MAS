@@ -279,7 +279,7 @@ export default function POSPage() {
       if (selectedOutlet && selectedOutlet !== "all" && baseUom.outlet_prices) {
         let outletUomPrices = baseUom.outlet_prices;
         if (typeof outletUomPrices === 'string') {
-          try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) {}
+          try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) { }
         }
         if (outletUomPrices && outletUomPrices[selectedOutlet]) {
           return Number(outletUomPrices[selectedOutlet]);
@@ -293,7 +293,7 @@ export default function POSPage() {
     if (selectedOutlet && selectedOutlet !== "all" && product.outlet_prices) {
       let outletPrices = product.outlet_prices;
       if (typeof outletPrices === 'string') {
-        try { outletPrices = JSON.parse(outletPrices); } catch (e) {}
+        try { outletPrices = JSON.parse(outletPrices); } catch (e) { }
       }
       if (outletPrices && outletPrices[selectedOutlet]) {
         basePrice = Number(outletPrices[selectedOutlet]);
@@ -308,7 +308,7 @@ export default function POSPage() {
     if (selectedOutlet && selectedOutlet !== "all" && uom.outlet_prices) {
       let outletUomPrices = uom.outlet_prices;
       if (typeof outletUomPrices === 'string') {
-        try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) {}
+        try { outletUomPrices = JSON.parse(outletUomPrices); } catch (e) { }
       }
       const outletUomPrice = outletUomPrices && outletUomPrices[selectedOutlet];
       if (outletUomPrice) return Number(outletUomPrice);
@@ -1383,8 +1383,8 @@ export default function POSPage() {
                                 {isAdmin && isEditMode && (
                                   <div className="mt-2 flex items-center gap-2">
                                     <label className="text-[10px] text-slate-500">Diskon/item:</label>
-                                    <Input 
-                                      type="text" 
+                                    <Input
+                                      type="text"
                                       placeholder="0"
                                       value={item.manualDiscountAmount ? formatNumberWithDots(item.manualDiscountAmount.toString()) : ''}
                                       onChange={(e) => updateItemManualDiscount(item.productId, item.unitName, parseNumberFromDots(e.target.value))}
@@ -1884,9 +1884,9 @@ export default function POSPage() {
                     <div className="font-bold">{item.productName}</div>
                     <div className="flex justify-between items-start">
                       <div>
-                        <div>{item.quantity} {item.unitName} x {formatRupiah(item.unitPrice)}</div>
+                        <div>{item.quantity} {item.unitName} x {formatRupiah(itemPrice)}</div>
                       </div>
-                      <p className="font-bold text-slate-900 dark:text-slate-100">{formatRupiah(item.quantity * item.unitPrice)}</p>
+                      <p className="font-bold text-slate-900 dark:text-slate-100">{formatRupiah(item.quantity * itemPrice)}</p>
                     </div>
                   </div>
                 );
@@ -1894,23 +1894,19 @@ export default function POSPage() {
 
               <div className="border-t border-dashed border-slate-300 dark:border-slate-600 pt-3 mt-3 space-y-1 font-mono text-sm">
                 {(() => {
-                  const grossSubtotal = lastTransaction?.items?.reduce((sum: number, item: any) => sum + (item.quantity * (item.unitPrice || 0)), 0) || lastTransaction?.subtotal || 0;
-                  const totalItemDiscounts = lastTransaction?.items?.reduce((sum: number, item: any) => {
-                    const activeDiscount = item.quantity >= (item.uomMinQty || 1) ? (item.uomDiscountAmount || 0) : 0;
-                    return sum + (item.quantity * activeDiscount);
-                  }, 0) || 0;
-                  const totalDiscount = totalItemDiscounts + (lastTransaction?.discount || 0);
+                  const netSubtotal = lastTransaction?.subtotal || 0;
+                  const globalDiscount = lastTransaction?.discount || 0;
 
                   return (
                     <>
                       <div className="flex justify-between">
                         <span>Subtotal</span>
-                        <span>{formatRupiah(grossSubtotal)}</span>
+                        <span>{formatRupiah(netSubtotal)}</span>
                       </div>
-                      {totalDiscount > 0 && (
+                      {globalDiscount > 0 && (
                         <div className="flex justify-between">
-                          <span>Diskon</span>
-                          <span>{formatRupiah(totalDiscount)}</span>
+                          <span>Diskon Transaksi</span>
+                          <span>{formatRupiah(globalDiscount)}</span>
                         </div>
                       )}
                     </>
@@ -1951,8 +1947,8 @@ export default function POSPage() {
                   <div className="flex justify-between text-sm pb-1">
                     <span className="lowercase text-slate-500 dark:text-slate-400">status</span>
                     <span className={`font-bold ${lastTransaction?.payment_status === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
-                        lastTransaction?.payment_status === 'partial' ? 'text-amber-600 dark:text-amber-400' :
-                          'text-rose-600 dark:text-rose-400'
+                      lastTransaction?.payment_status === 'partial' ? 'text-amber-600 dark:text-amber-400' :
+                        'text-rose-600 dark:text-rose-400'
                       }`}>
                       {lastTransaction?.payment_status === 'paid' ? 'LUNAS' : lastTransaction?.payment_status === 'partial' ? 'CICILAN' : 'TEMPO PENUH'}
                     </span>
