@@ -1,7 +1,7 @@
-export const APP_VERSION = '1.0.5';
+export const APP_VERSION = '1.0.7';
 
 export const RELEASE_CHANGELOG = [
-  "perbaikan fitur diskon"
+  "update nama id kantong mas"
 ];
 
 export interface UpdateInfo {

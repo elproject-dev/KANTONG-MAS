@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kantongmas.app',
+  appId: 'com.kantongmas2.app',
   appName: 'KANTONG-MAS',
   webDir: 'dist',
   server: {

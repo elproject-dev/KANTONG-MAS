@@ -28,7 +28,7 @@ export function UpdateDialog() {
     // Hanya jalankan di perangkat native (Capacitor) atau Tauri (Desktop)
     const isNative = Capacitor.isNativePlatform();
     const isTauri = '__TAURI_INTERNALS__' in window;
-    
+
     if (!isNative && !isTauri) {
       return; // Sembunyikan di web
     }
