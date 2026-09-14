@@ -54,9 +54,9 @@ export function useCountUp(
       const progress = Math.min(elapsed / duration, 1);
       const easedProgress = easing(progress);
 
-      const currentValue =
-        startValueRef.current +
-        (endValue - startValueRef.current) * easedProgress;
+      const rawValue = startValueRef.current + (endValue - startValueRef.current) * easedProgress;
+      // Clamp to prevent negative flash (easeOutBack can overshoot below 0)
+      const currentValue = endValue >= 0 ? Math.max(0, rawValue) : rawValue;
 
       setDisplayValue(Number(currentValue.toFixed(decimals)));
 
