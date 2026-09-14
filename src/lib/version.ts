@@ -1,7 +1,8 @@
-export const APP_VERSION = '1.0.9';
+export const APP_VERSION = '1.0.10';
 
 export const RELEASE_CHANGELOG = [
-  "perubahan nama aplikasi dan background logo"
+  "perbaikan mode tempo - retur action",
+  "penambahan fitur detail transaksi"
 ];
 
 export interface UpdateInfo {
